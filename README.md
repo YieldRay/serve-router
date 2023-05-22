@@ -41,8 +41,9 @@ serve(app.export);
 # build
 
 ```sh
-git clone ...
-cd ...
+git clone https://github.com/YieldRay/serve-router.git
+cd serve-router
+
 pnpm install
 mkdir -p src/path-to-regexp
 curl -fSskL https://github.com/pillarjs/path-to-regexp/raw/master/src/index.ts -o src/path-to-regexp/index.ts
