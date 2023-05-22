@@ -1,0 +1,16 @@
+{
+    "compilerOptions": {
+        "strict": true,
+        "target": "ESNext",
+        "lib": ["ESNext", "DOM"],
+        "module": "ESNext",
+        "declaration": true,
+        "esModuleInterop": true,
+        "emitDeclarationOnly": true,
+        "allowImportingTsExtensions": true,
+        "forceConsistentCasingInFileNames": true,
+        "skipLibCheck": true,
+        "outDir": "dist"
+    },
+    "include": ["src"]
+}
