@@ -7,13 +7,14 @@ see: <https://deno.com/manual/runtime/http_server_apis>
 
 # usage
 
-we use the latest version of `path-to-regexp` to match, which is different from what express depends  
+we use the latest version of [`path-to-regexp`](https://github.com/pillarjs/path-to-regexp) to match, which is different from what express depends  
+for example, you can use `/**` to match any path in express, but should use `/(.*)` here  
 you may want to test the match syntax via <https://forbeslindesay.github.io/express-route-tester/>
 
 ```ts
 // use Deno
 import { serve } from "https://deno.land/std@0.188.0/http/server.ts";
-import App from "https://unpkg.com/serve-router@latest/dist/index.js";
+import App from "https://esm.sh/serve-router@latest";
 
 // use Node.js >= 16
 import { serve } from "serve-router/node";

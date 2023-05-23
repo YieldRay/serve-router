@@ -4,7 +4,15 @@ interface Handler<P extends object = object> {
     (request: Request, matches: MatchResult<P>): Response | void | Promise<Response | void>;
 }
 
-export default function () {
+export default function (options: Partial<{ onError(e: unknown): ReturnType<Handler> }>) {
+    const onErrorDefault = (e: unknown) => {
+        console.error(e);
+        return new Response("Internal Server Error", {
+            status: 500,
+        });
+    };
+    const onError = options.onError || onErrorDefault;
+
     const pathToMatcher = new Map<string, MatchFunction>();
 
     /**
@@ -85,13 +93,18 @@ export default function () {
                 if (!handlers) continue;
 
                 for (const handler of handlers) {
-                    // handler can be sync or async
-                    const res = (await handler(request, matched)) as Response | void;
-                    // if not return a Response, find the next one
-                    if (res instanceof Response) {
-                        return res;
-                    } else {
-                        continue;
+                    try {
+                        // handler can be sync or async
+                        const res = await handler(request, matched);
+                        // if not return a Response, find the next one
+                        if (res instanceof Response) return res;
+                        else continue;
+                    } catch (e) {
+                        // the handler() may throw error
+                        const res = await onError(e);
+                        // if not return a Response, stop to find and return 500 to client
+                        if (res instanceof Response) return res;
+                        else return onErrorDefault(e);
                     }
                 }
             }
