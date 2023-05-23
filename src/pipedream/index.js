@@ -2,7 +2,10 @@ import fetch, { Request, Headers } from "node-fetch";
 
 /**
  * Usage:
-import { serve } from "xxx"
+import fetch, { Request, Headers } from "node-fetch";
+import { createServe } from "serve-router/pipedream";
+const serve = createServe(defineComponent);
+
 export default serve((req) => {
     const u = new URL(req.url);
     u.host = "example.net";
@@ -10,13 +13,15 @@ export default serve((req) => {
 });
 */
 
-export function serve(handler) {
-    return defineComponent({
-        async run({ steps, $ }) {
-            const response = await pipedreamToRequest(steps, handler);
-            await responseToPipedream($, response);
-        },
-    });
+export function createServe(defineComponent) {
+    return function serve(handler) {
+        return defineComponent({
+            async run({ steps, $ }) {
+                const response = await pipedreamToRequest(steps, handler);
+                await responseToPipedream($, response);
+            },
+        });
+    };
 }
 
 async function pipedreamToRequest(steps, handler) {
