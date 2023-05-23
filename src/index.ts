@@ -1,4 +1,3 @@
-// deno-lint-ignore-file
 import { match, type MatchFunction, type MatchResult } from "./path-to-regexp/index.js";
 
 interface Handler<P extends object = object> {
@@ -17,19 +16,20 @@ export default function () {
     /**
      * this is actually a path to handlers map
      */
-    const mapper = {
+    const mapperMethod = {
         GET: new Map<MatchFunction, Handler[]>(),
         POST: new Map<MatchFunction, Handler[]>(),
     };
     /**
-     * map for handler any request method, lowerest priority
+     * map for handler app.use(), highest priority
      */
-    const mapperAll = new Map<MatchFunction, Handler[]>();
+    const mapUse = new Map<MatchFunction, Handler[]>();
 
     /**
-     * helper function, if array is not exist, create one
+     * map is just a  `Map<MatchFunction, Handler[]>`
+     * call `getMatcher()` to get the key
      */
-    function addMatcherHandlersToMap<P extends object = object>(
+    function addHandlerToMap<P extends object = object>(
         map: Map<MatchFunction, Handler[]>,
         path: string,
         ...handlers: Handler<P>[]
@@ -45,22 +45,31 @@ export default function () {
         }
     }
 
-    function addMappedHandler<P extends object = object>(method: string, path: string, ...handlers: Handler<P>[]) {
+    /**
+     * mapper is a object that contains map
+     */
+    function addHandlerToMapper<P extends object = object>(
+        mapper: Record<string, Map<MatchFunction, Handler[]>>,
+        method: string,
+        path: string,
+        ...handlers: Handler<P>[]
+    ) {
         const methodString = method.toUpperCase();
 
         // add http METHOD to mapper
-        if (!Reflect.has(mapper, methodString)) Reflect.set(mapper, methodString, new Map());
+        if (!Reflect.has(mapperMethod, methodString)) Reflect.set(mapper, methodString, new Map());
 
         // match function to handlers map
         const map: Map<MatchFunction, Handler[]> = Reflect.get(mapper, methodString);
 
         // add to map
-        addMatcherHandlersToMap(map, path, ...handlers);
+        addHandlerToMap(map, path, ...handlers);
     }
 
     async function serveHandler(request: Request) {
         const url = new URL(request.url);
         const path = url.pathname;
+        const matched: MatchResult = {} as MatchResult;
 
         async function findResponse(map?: Map<MatchFunction, Handler[]>) {
             if (!map) return;
@@ -69,28 +78,39 @@ export default function () {
                 const matches = matcher(path);
                 if (!matches) continue;
 
+                // each handler may add some properties to that object
+                Object.assign(matched, matches);
+
                 const handlers = map.get(matcher);
                 if (!handlers) continue;
 
                 for (const handler of handlers) {
                     // handler can be sync or async
-                    const res = (await handler(request, matches)) as Response | void;
+                    const res = (await handler(request, matched)) as Response | void;
+                    // if not return a Response, find the next one
                     if (res instanceof Response) {
                         return res;
                     } else {
-                        // if not return a Response, find the next one
                         continue;
                     }
                 }
             }
         }
 
-        const res1 = await findResponse(Reflect.get(mapper, request.method));
-        if (res1 instanceof Response) return res1;
+        const res = await (async () => {
+            // highest priority for use()
+            const resUse = await findResponse(mapUse);
+            if (resUse instanceof Response) return resUse;
 
-        const res2 = await findResponse(mapperAll);
-        if (res2 instanceof Response) return res2;
+            const resMethod = await findResponse(Reflect.get(mapperMethod, request.method));
+            if (resMethod instanceof Response) return resMethod;
 
+            // lowest priority for all()
+            const resMethodAll = await findResponse(Reflect.get(mapperMethod, "*"));
+            if (resMethodAll instanceof Response) return resMethodAll;
+        })();
+
+        if (res) return res;
         return new Response(`Cannot ${request.method} ${url.pathname}`, {
             status: 404,
         });
@@ -99,33 +119,37 @@ export default function () {
     function createInstance(prefix = "") {
         return {
             get: function <P extends object = object>(path: string, ...handlers: Handler<P>[]): typeof this {
-                addMappedHandler("get", prefix + path, ...handlers);
+                addHandlerToMapper(mapperMethod, "get", prefix + path, ...handlers);
                 return this;
             },
             head: function <P extends object = object>(path: string, ...handlers: Handler<P>[]): typeof this {
-                addMappedHandler("head", prefix + path, ...handlers);
+                addHandlerToMapper(mapperMethod, "head", prefix + path, ...handlers);
                 return this;
             },
             post: function <P extends object = object>(path: string, ...handlers: Handler<P>[]): typeof this {
-                addMappedHandler("post", prefix + path, ...handlers);
+                addHandlerToMapper(mapperMethod, "post", prefix + path, ...handlers);
                 return this;
             },
             put: function <P extends object = object>(path: string, ...handlers: Handler<P>[]): typeof this {
-                addMappedHandler("put", prefix + path, ...handlers);
+                addHandlerToMapper(mapperMethod, "put", prefix + path, ...handlers);
                 return this;
             },
             delete: function <P extends object = object>(path: string, ...handlers: Handler<P>[]): typeof this {
-                addMappedHandler("delete", prefix + path, ...handlers);
+                addHandlerToMapper(mapperMethod, "delete", prefix + path, ...handlers);
                 return this;
             },
             all: function <P extends object = object>(path: string, ...handlers: Handler<P>[]): typeof this {
-                addMatcherHandlersToMap(mapperAll, prefix + path, ...handlers);
+                addHandlerToMapper(mapperMethod, "*", prefix + path, ...handlers);
+                return this;
+            },
+            use: function <P extends object = object>(path: string, ...handlers: Handler<P>[]): typeof this {
+                addHandlerToMap(mapUse, path, ...handlers);
                 return this;
             },
             route: (path: string) => createInstance(path),
             useMethod: function (method: string) {
                 return <P extends object = object>(path: string, ...handlers: Handler<P>[]) => {
-                    addMatcherHandlersToMap(mapperAll, prefix + path, ...handlers);
+                    addHandlerToMapper(mapperMethod, method, prefix + path, ...handlers);
                     return this;
                 };
             },
