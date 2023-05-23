@@ -1,5 +1,5 @@
 // deno-lint-ignore-file
-import { match, type MatchFunction, type MatchResult } from "./path-to-regexp/index.ts";
+import { match, type MatchFunction, type MatchResult } from "./path-to-regexp/index.js";
 
 interface Handler<P extends object = object> {
     (request: Request, matches: MatchResult<P>): Response | void | Promise<Response | void>;

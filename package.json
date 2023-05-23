@@ -1,10 +1,18 @@
 {
     "name": "serve-router",
     "author": "YieldRay",
-    "version": "0.1.2",
+    "version": "0.1.3",
     "type": "module",
     "main": "dist/index.js",
-    "types": "./dist/index.d.ts",
+    "types": "dist/index.d.ts",
+    "exports": {
+        ".": "./dist/index.js",
+        "./node": "./dist/node/index.js",
+        "./path-to-regexp": "./dist/path-to-regexp/index.js"
+    },
+    "scripts": {
+        "build": "tsc"
+    },
     "license": "ISC",
     "repository": {
         "type": "git",
@@ -14,12 +22,11 @@
         "url": "https://github.com/YieldRay/serve-router/issues"
     },
     "homepage": "https://github.com/YieldRay/serve-router#readme",
-    "scripts": {
-        "build": "rollup -c"
-    },
     "devDependencies": {
-        "@rollup/plugin-typescript": "^11.1.1",
-        "tslib": "^2.5.2",
+        "@types/node": "^20.2.3",
         "typescript": "^5.0.4"
+    },
+    "optionalDependencies": {
+        "node-fetch": "^3.3.1"
     }
 }

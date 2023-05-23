@@ -2,7 +2,7 @@
 
 a small express like library that routes for your http server  
 build for deno's [`serve()`](https://deno.land/std/http/server.ts) api, which is compatible with some serverless platform  
-e.g. `cloudflare workers`  
+e.g. `Cloudflare Workers`  
 see: <https://deno.com/manual/runtime/http_server_apis>
 
 # usage
@@ -36,6 +36,9 @@ app.route("/api")
     .get("/two", () => new Response("two"));
 
 serve(app.export);
+
+// for those who use node.js, import this simple serve() polyfill
+import { serve } from "serve-router/node";
 ```
 
 # build

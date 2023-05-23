@@ -6,11 +6,11 @@
         "module": "ESNext",
         "declaration": true,
         "esModuleInterop": true,
-        "emitDeclarationOnly": true,
-        "allowImportingTsExtensions": true,
+        "allowJs": true,
+        "checkJs": false,
         "forceConsistentCasingInFileNames": true,
         "skipLibCheck": true,
         "outDir": "dist"
     },
-    "include": ["src"]
+    "include": ["src/**/*"]
 }
