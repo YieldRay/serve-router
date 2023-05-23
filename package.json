@@ -1,13 +1,14 @@
 {
     "name": "serve-router",
     "author": "YieldRay",
-    "version": "0.1.3",
+    "version": "0.1.4",
     "type": "module",
     "main": "dist/index.js",
     "types": "dist/index.d.ts",
     "exports": {
         ".": "./dist/index.js",
         "./node": "./dist/node/index.js",
+        "./pipedream": "./dist/pipedream/index.js",
         "./path-to-regexp": "./dist/path-to-regexp/index.js"
     },
     "scripts": {

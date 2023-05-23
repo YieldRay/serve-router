@@ -8,17 +8,21 @@ see: <https://deno.com/manual/runtime/http_server_apis>
 # usage
 
 ```ts
+// use Deno
 import { serve } from "https://deno.land/std@0.188.0/http/server.ts";
-import App from "https://denopkg.com/yieldray/serve-router/src/index.ts";
-// Or use npm
+import App from "https://unpkg.com/serve-router@latest/dist/index.js";
+
+// use Node.js >= 16
+import { serve } from "serve-router/node";
 import App from "serve-router";
 
 const app = App();
 
-app.get("/", () => new Response("Hello, world!"));
+app.get("/", (_req) => new Response("Hello, world!"));
+
 app.get("/headers", (req: Request) => Response.json(Object.fromEntries(req.headers.entries())));
 
-app.get<{ name: string }>("/user/:name", (_, { params }) => {
+app.get<{ name: string }>("/user/:name", (_req, { params }) => {
     return new Response(`Hello, ${params.name}`);
 });
 
@@ -36,9 +40,6 @@ app.route("/api")
     .get("/two", () => new Response("two"));
 
 serve(app.export);
-
-// for those who use node.js, import this simple serve() polyfill
-import { serve } from "serve-router/node";
 ```
 
 # build
