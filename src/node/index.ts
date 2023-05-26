@@ -2,7 +2,7 @@ import http from "node:http";
 import { Duplex, Readable } from "node:stream";
 import type { ReadableStream } from "node:stream/web";
 
-function incoming2request(req: http.IncomingMessage): Request {
+export function incoming2request(req: http.IncomingMessage): Request {
     const method = req.method ?? "GET";
     let body = undefined;
     if (!["HEAD", "GET"].includes(method.toUpperCase())) {
@@ -30,7 +30,7 @@ function incoming2request(req: http.IncomingMessage): Request {
     });
 }
 
-function response4server(res: http.ServerResponse, resp: Response) {
+export function response4server(res: http.ServerResponse, resp: Response) {
     res.statusCode = resp.status;
     resp.headers.forEach(([key, value]) => {
         if (res.hasHeader(key)) {
@@ -50,7 +50,7 @@ export function serve(
     handler: (req: Request) => Promise<Response>,
     options?: {
         port?: number;
-        onError?: (error: unknown) => Promise<Response>;
+        onError?: (error: Error) => void; //! this is different from deno
         onListen?: (params: { hostname: string; port: number }) => void;
     }
 ) {

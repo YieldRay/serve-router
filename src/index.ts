@@ -4,14 +4,14 @@ interface Handler<P extends object = object> {
     (request: Request, matches: MatchResult<P>): Response | void | Promise<Response | void>;
 }
 
-export default function (options: Partial<{ onError(e: unknown): ReturnType<Handler> }>) {
+export default function (options?: Partial<{ onError(e: unknown): ReturnType<Handler> }>) {
     const onErrorDefault = (e: unknown) => {
         console.error(e);
         return new Response("Internal Server Error", {
             status: 500,
         });
     };
-    const onError = options.onError || onErrorDefault;
+    const onError = options?.onError || onErrorDefault;
 
     const pathToMatcher = new Map<string, MatchFunction>();
 
