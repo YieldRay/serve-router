@@ -6,6 +6,7 @@
         "module": "ESNext",
         "declaration": true,
         "esModuleInterop": true,
+        "moduleResolution": "nodenext",
         "allowJs": true,
         "checkJs": false,
         "forceConsistentCasingInFileNames": true,

@@ -13,27 +13,27 @@ you may want to test the match syntax via <https://forbeslindesay.github.io/expr
 
 ```ts
 // use Deno
-import { serve } from "https://deno.land/std@0.188.0/http/server.ts";
-import App from "https://esm.sh/serve-router@latest";
+import { serve } from "https://deno.land/std@0.188.0/http/server.ts"
+import App from "https://esm.sh/serve-router@latest"
 
 // use Node.js >= 16
-import { serve } from "serve-router/node";
-import App from "serve-router";
+import { serve } from "serve-router/node"
+import App from "serve-router"
 
-const app = App();
+const app = App()
 
-app.get("/", (_req) => new Response("Hello, world!"));
+app.get("/", (_req) => new Response("Hello, world!"))
 
-app.get("/headers", (req: Request) => Response.json(Object.fromEntries(req.headers.entries())));
+app.get("/headers", (req: Request) => Response.json(Object.fromEntries(req.headers.entries())))
 
 app.get<{ name: string }>("/user/:name", (_req, { params }) => {
-    return new Response(`Hello, ${params.name}`);
-});
+    return new Response(`Hello, ${params.name}`)
+})
 
 app.post("/post", async (req) => {
-    const json = await req.json();
-    return Response.json(json);
-});
+    const json = await req.json()
+    return Response.json(json)
+})
 
 app.route("/api")
     // for /api
@@ -41,9 +41,9 @@ app.route("/api")
     // for /api/one
     .get("/one", () => new Response("one"))
     // for /api/two
-    .get("/two", () => new Response("two"));
+    .get("/two", () => new Response("two"))
 
-serve(app.export);
+serve(app.export)
 ```
 
 # build
