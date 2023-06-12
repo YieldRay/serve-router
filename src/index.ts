@@ -56,7 +56,6 @@ export default function (options?: Partial<{ onError(e: unknown): ReturnType<Han
             if (record.method !== "*" && record.method !== request.method) continue
             const { matcher } = record
             const matches = matcher(url.pathname)
-            console.log(record, matches)
             if (!matches) continue
             // each handler may add some properties to that object
             Object.assign(matched, matches)
