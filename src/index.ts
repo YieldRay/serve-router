@@ -53,10 +53,15 @@ export default function (options?: Partial<{ onError(e: unknown): ReturnType<Han
         const matched: MatchResult = {} as MatchResult
 
         for (const record of records) {
+            // check request method
+            // special record method: *
             if (record.method !== "*" && record.method !== request.method) continue
+
+            // check if request pathname is matched
             const { matcher } = record
             const matches = matcher(url.pathname)
             if (!matches) continue
+
             // each handler may add some properties to that object
             Object.assign(matched, matches)
             const { handlers } = record
@@ -141,9 +146,5 @@ export class AcaoResponse extends Response {
             },
             status,
         })
-    }
-
-    static async proxy(url: string | URL): Promise<AcaoResponse> {
-        return fetch(url).then((res) => new this(res.body))
     }
 }
