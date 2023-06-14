@@ -50,23 +50,35 @@ export function serve(
     handler: (request: Request) => Response | Promise<Response>,
     options?: {
         port?: number
-        onError?: (error: Error) => void //! this is different from deno
+        onError?: (error: unknown) => Response | Promise<Response>
         onListen?: (params: { hostname: string; port: number }) => void
     }
 ) {
+    const onErrorDefault = (e: unknown) => {
+        console.error(e)
+        return new Response("Internal Server Error", { status: 500 })
+    }
     const port = options?.port ?? 3000
     http.createServer(async (req, res) => {
-        const webReq = incoming2request(req)
-        const webRes = await handler(webReq)
-        response4server(res, webRes)
-    })
-        .listen(port, () =>
-            (
-                options?.onListen ||
-                (({ hostname, port }) => {
-                    console.log(`Listening on http://${hostname}:${port}`)
-                })
-            )({ hostname: "localhost", port })
-        )
-        .on("error", (e) => options?.onError?.(e))
+        try {
+            const webReq = incoming2request(req)
+            const webRes = await handler(webReq)
+            response4server(res, webRes)
+        } catch (e) {
+            const onError = options?.onError?.bind(options.onError) || onErrorDefault
+            try {
+                // in case options.onError() throw any error
+                response4server(res, await onError(e))
+            } catch {
+                response4server(res, onErrorDefault(e))
+            }
+        }
+    }).listen(port, () =>
+        (
+            options?.onListen ||
+            (({ hostname, port }) => {
+                console.log(`Listening on http://${hostname}:${port}`)
+            })
+        )({ hostname: "localhost", port })
+    )
 }

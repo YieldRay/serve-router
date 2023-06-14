@@ -13,7 +13,7 @@ you may want to test the match syntax via <https://forbeslindesay.github.io/expr
 
 ```ts
 // use Deno
-import { serve } from "https://deno.land/std@0.188.0/http/server.ts"
+import { serve } from "https://deno.land/std@0.191.0/http/server.ts"
 import App from "https://esm.sh/serve-router@latest"
 
 // use Node.js >= 16

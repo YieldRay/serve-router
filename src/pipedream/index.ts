@@ -30,8 +30,15 @@ export function createServe(defineComponent: <T>(options: object) => T) {
     return function serve(handler: (request: Request) => Response | Promise<Response>) {
         return defineComponent({
             async run({ steps, $ }: RunOptions) {
-                const response = await pipedreamToRequest(steps, handler)
-                await responseToPipedream($, response)
+                try {
+                    const response = await pipedreamToRequest(steps, handler)
+                    await responseToPipedream($, response)
+                } catch (e) {
+                    await $.respond({
+                        status: 500,
+                        body: `Internal Server Error\n${e}`,
+                    })
+                }
             },
         })
     }

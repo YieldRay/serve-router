@@ -20,9 +20,7 @@ class MatcherProvider {
 export default function (options?: Partial<{ onError(e: unknown): ReturnType<Handler> }>) {
     const onErrorDefault = (e: unknown) => {
         console.error(e)
-        return new Response("Internal Server Error", {
-            status: 500,
-        })
+        return new Response("Internal Server Error", { status: 500 })
     }
     const onError = options?.onError || onErrorDefault
 
@@ -109,17 +107,19 @@ export default function (options?: Partial<{ onError(e: unknown): ReturnType<Han
                 addRecord("DELETE", prefix + path, ...handlers)
                 return this
             },
+            options: function <P extends object = object>(path: string, ...handlers: Handler<P>[]): typeof this {
+                addRecord("OPTIONS", prefix + path, ...handlers)
+                return this
+            },
+            patch: function <P extends object = object>(path: string, ...handlers: Handler<P>[]): typeof this {
+                addRecord("PATCH", prefix + path, ...handlers)
+                return this
+            },
             all: function <P extends object = object>(path: string, ...handlers: Handler<P>[]): typeof this {
                 addRecord("*", prefix + path, ...handlers)
                 return this
             },
             route: (path: string) => createInstance(path),
-            useMethod: function (method: string) {
-                return <P extends object = object>(path: string, ...handlers: Handler<P>[]) => {
-                    addRecord(method, prefix + path, ...handlers)
-                    return this
-                }
-            },
         }
     }
 
@@ -140,11 +140,6 @@ export class AcaoResponse extends Response {
     }
 
     static redirect(url: string | URL, status = 302): AcaoResponse {
-        return new this(null, {
-            headers: {
-                location: new URL(url).toString(),
-            },
-            status,
-        })
+        return new this(null, { headers: { location: new URL(url).href }, status })
     }
 }
