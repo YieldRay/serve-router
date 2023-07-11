@@ -1,6 +1,6 @@
 import { match, type MatchFunction, type MatchResult } from "./path-to-regexp/index.js"
 
-interface Handler<P extends object = object> {
+export interface Handler<P extends object = object> {
     (request: Request, matches: MatchResult<P>): Response | void | Promise<Response | void>
 }
 
@@ -124,22 +124,4 @@ export default function (options?: Partial<{ onError(e: unknown): ReturnType<Han
     }
 
     return { ...createInstance(), export: serveHandler }
-}
-
-/**
- * Special Response constructor that automatically add cors header
- */
-export class AcaoResponse extends Response {
-    constructor(body?: BodyInit | null | undefined, init?: ResponseInit | undefined) {
-        const headers = {
-            ...init?.headers,
-            "Access-Control-Allow-Origin": "*",
-            "Access-Control-Allow-Headers": "Content-Type",
-        }
-        super(body, { ...init, headers })
-    }
-
-    static redirect(url: string | URL, status = 302): AcaoResponse {
-        return new this(null, { headers: { location: new URL(url).href }, status })
-    }
 }
