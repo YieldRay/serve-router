@@ -46,6 +46,32 @@ app.route("/api")
 serve(app.export)
 ```
 
+# advanced
+
+`serve-router` does not support `next()` function like express,  
+however you can use two additional handlers to emulate it, like this
+
+```ts
+import App from "serve-router"
+import { attachStatic } from "serve-router/utils"
+
+const app = App()
+
+app.all("/(.*)", (req: Request, ctx: any) => {
+    ctx.beginTime = Date.now()
+    console.log("[prehandle]  ", req.method, req.url)
+})
+
+// `attachStatic` can only be use in deno
+attachStatic(app, "/", "public")
+
+app.all("/(.*)", (req, ctx: any, res: Response | null) => {
+    const endTime = Date.now()
+    const { beginTime } = ctx
+    console.log("[posthandle] ", `Returned ${res!.status} in ${endTime - beginTime}ms`)
+})
+```
+
 # build
 
 ```sh

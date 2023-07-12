@@ -27,8 +27,8 @@
     "homepage": "https://github.com/YieldRay/serve-router#readme",
     "devDependencies": {
         "@pipedream/types": "^0.1.6",
-        "@types/node": "^20.3.1",
-        "typescript": "^5.1.3"
+        "@types/node": "^20.4.1",
+        "typescript": "^5.1.6"
     },
     "optionalDependencies": {
         "node-fetch": "^3.3.1"

@@ -1,7 +1,7 @@
 import { match, type MatchFunction, type MatchResult } from "./path-to-regexp/index.js"
 
 export interface Handler<P extends object = object> {
-    (request: Request, matches: MatchResult<P>): Response | void | Promise<Response | void>
+    (request: Request, matches: MatchResult<P>, response: Response | null): Response | void | Promise<Response | void>
 }
 
 class MatcherProvider {
@@ -46,9 +46,14 @@ export default function (options?: Partial<{ onError(e: unknown): ReturnType<Han
     }
 
     async function serveHandler(request: Request) {
+        // url for match
         const url = new URL(request.url)
 
+        // the matched object, will pass to handler as the second parameter
         const matched: MatchResult = {} as MatchResult
+
+        // can only response once
+        let response: Response | null = null
 
         for (const record of records) {
             // check request method
@@ -66,12 +71,21 @@ export default function (options?: Partial<{ onError(e: unknown): ReturnType<Han
             for (const handler of handlers) {
                 try {
                     // handler can be sync or async
-                    const res = await handler(request, matched)
+                    const res = await handler(request, matched, response)
+
+                    if (res instanceof Response) {
+                        // if previous handlers already send a response, prevent a double send
+                        if (response)
+                            throw new Error(
+                                `can only send one response for one router, check your handlers to fix it (at '${url.pathname}')`
+                            )
+                        response = res
+                    }
                     // if not return a Response, find the next one
-                    if (res instanceof Response) return res
                     else continue
                 } catch (e) {
                     // the handler() may throw error
+                    // when one handler throws, we stop any next handler and returns error response
                     const res = await onError(e)
                     // if not return a Response, stop to find and return 500 to client
                     if (res instanceof Response) return res
@@ -80,9 +94,7 @@ export default function (options?: Partial<{ onError(e: unknown): ReturnType<Han
             }
         }
 
-        return new Response(`Cannot ${request.method} ${url.pathname}`, {
-            status: 404,
-        })
+        return response || new Response(`Cannot ${request.method} ${url.pathname}`, { status: 404 })
     }
 
     function createInstance(prefix = "") {

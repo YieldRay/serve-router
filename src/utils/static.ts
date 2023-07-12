@@ -1,5 +1,8 @@
 import { type Handler } from "../index.js"
 
+/**
+ * returns if file exists
+ */
 async function exist(path: string | URL) {
     try {
         const stat = await Deno.stat(path)
@@ -9,13 +12,14 @@ async function exist(path: string | URL) {
     }
 }
 
-async function fileResponse(path: string) {
-    const realPath = await Deno.realPath(path)
+async function fileResponse(path: string, mediaTypes?: Record<string, string>, headOnly = false) {
+    const realPath: string = await Deno.realPath(path)
     const file = await Deno.open(realPath, { read: true, create: false, createNew: false })
     const stat = await file.stat()
     const headers = { "content-length": String(stat.size) }
-
-    const ext = realPath.replaceAll("\\", "/").split("/").toReversed()[0].split(".").at(-1)
+    if (stat.mtime) Reflect.set(headers, "last-modified", stat.mtime.toUTCString())
+    // extract extension from file path
+    const ext = realPath.replaceAll("\\", "/").split("/").reverse()[0].split(".").at(-1)
     const contentType = (
         {
             htm: "text/html",
@@ -23,6 +27,7 @@ async function fileResponse(path: string) {
             xhtml: "application/xhtml+xml",
             js: "text/javascript",
             mjs: "text/javascript",
+            cjs: "text/javascript",
             css: "text/css",
             txt: "text/plain",
             json: "application/json",
@@ -31,11 +36,13 @@ async function fileResponse(path: string) {
             jpeg: "image/jpeg",
             png: "image/png",
             webp: "image/webp",
+            pdf: "application/pdf",
             bin: "application/octet-stream",
-        } as Record<string, string>
-    )[ext!] as string | undefined
+            ...mediaTypes,
+        } as Record<string, string | undefined>
+    )[ext!]
     if (contentType) Reflect.set(headers, "content-type", contentType)
-    return new Response(file.readable, { headers })
+    return new Response(headOnly ? null : file.readable, { headers })
 }
 
 interface Options {
@@ -47,11 +54,16 @@ interface Options {
      * if not specified, by default is ["index.html", "index.htm"]
      */
     index?: string[]
+    /**
+     * suffix to media type table, e.g. {"mp4": "application/mp4"}
+     */
+    mediaTypes?: Record<string, string>
 }
 
 type InstanceFn<P extends object = object> = (path: string, ...handlers: Handler<P>[]) => unknown
 
 /**
+ * **(deno only)**
  * attach a static file hosting handler to specified path
  * @param instance must be top level instance
  * @param path must starts with '/'
@@ -64,11 +76,16 @@ type InstanceFn<P extends object = object> = (path: string, ...handlers: Handler
  * attachStatic(app, "/assets")
  * ```
  */
-export function attachStatic<P extends object = object, T extends { get: InstanceFn<P> } = { get: InstanceFn<P> }>(
-    instance: T,
-    path: string,
-    options?: string | Options
-) {
+export function attachStatic<
+    P extends object = object,
+    T extends { get: InstanceFn<P>; head: InstanceFn<P> } = { get: InstanceFn<P>; head: InstanceFn<P> }
+>(instance: T, path: string, options?: string | Options) {
+    if (!path.startsWith("/"))
+        throw new Error(
+            `static handler only supports top level instance, so path should begin with '/', receive '${path}'`
+        )
+
+    // dir may not ends with '/'
     const dir = Deno.realPathSync(
         typeof options === "string"
             ? options
@@ -79,9 +96,16 @@ export function attachStatic<P extends object = object, T extends { get: Instanc
     )
     if (!Deno.statSync(dir).isDirectory) throw new Error(`'${dir}' is not a directory!'`)
 
+    // remove suffix '/', if present
     const urlPath = path.endsWith("/") ? path.slice(0, -1) : path
-    instance.get(`${urlPath}/(.*)`, async (request: Request) => {
-        const filePart = new URL(request.url).pathname.slice(urlPath.length) // this must starts with '/'
+
+    const handler = async (request: Request) => {
+        // helper function, given a path, returns a Response object
+        const returnResponse = (path: string) =>
+            fileResponse(path, typeof options === "object" ? options.mediaTypes : undefined, request.method === "HEAD")
+
+        // this must starts with '/', as the prefix '/' is from url.pathname
+        const filePart = new URL(request.url).pathname.slice(urlPath.length)
 
         // if ends with '/', index file is required to send
         if (filePart.endsWith("/")) {
@@ -89,17 +113,17 @@ export function attachStatic<P extends object = object, T extends { get: Instanc
             if (typeof options === "object") options.index?.forEach((v) => indexs.push(v))
             else indexs.push("index.html", "index.htm")
 
-            for (const index of indexs.map((i) => "/" + i)) {
-                if (await exist(dir + index)) {
-                    return fileResponse(dir + index)
-                }
-            }
+            for (const index of indexs.map((i) => "/" + i))
+                if (await exist(dir + index)) return returnResponse(dir + index)
         }
 
         // otherwise, send if is a file
-        if (await exist(dir + filePart)) {
-            return fileResponse(dir + filePart)
-        }
-        // do not send response, allowing next handler to handle it
-    })
+        if (await exist(dir + filePart)) return returnResponse(dir + filePart)
+
+        // otherwise, do not send response, allowing next handler to handle it
+    }
+
+    // handle GET and HEAD request only
+    instance.head(`${urlPath}/(.*)`, handler)
+    instance.get(`${urlPath}/(.*)`, handler)
 }
