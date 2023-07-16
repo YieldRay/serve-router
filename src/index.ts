@@ -74,11 +74,7 @@ export default function (options?: Partial<{ onError(e: unknown): ReturnType<Han
                     const res = await handler(request, matched, response)
 
                     if (res instanceof Response) {
-                        // if previous handlers already send a response, prevent a double send
-                        if (response)
-                            throw new Error(
-                                `can only send one response for one router, check your handlers to fix it (at '${url.pathname}')`
-                            )
+                        // replace last response with new one
                         response = res
                     }
                     // if not return a Response, find the next one
@@ -94,6 +90,7 @@ export default function (options?: Partial<{ onError(e: unknown): ReturnType<Han
             }
         }
 
+        // the last returned response will be sent
         return response || new Response(`Cannot ${request.method} ${url.pathname}`, { status: 404 })
     }
 

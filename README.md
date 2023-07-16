@@ -13,7 +13,7 @@ you may want to test the match syntax via <https://forbeslindesay.github.io/expr
 
 ```ts
 // use Deno
-import { serve } from "https://deno.land/std@0.191.0/http/server.ts"
+import { serve } from "https://deno.land/std@0.194.0/http/server.ts"
 import App from "https://esm.sh/serve-router@latest"
 
 // use Node.js >= 16
@@ -62,7 +62,7 @@ app.all("/(.*)", (req: Request, ctx: any) => {
     console.log("[prehandle]  ", req.method, req.url)
 })
 
-// `attachStatic` can only be use in deno
+// `attachStatic` can only be used in deno
 attachStatic(app, "/", "public")
 
 app.all("/(.*)", (req, ctx: any, res: Response | null) => {

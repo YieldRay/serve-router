@@ -32,6 +32,7 @@ async function fileResponse(path: string, mediaTypes?: Record<string, string>, h
             txt: "text/plain",
             json: "application/json",
             xml: "application/xml",
+            svg: "image/svg+xml",
             jpg: "image/jpeg",
             jpeg: "image/jpeg",
             png: "image/png",
