@@ -46,7 +46,7 @@ export function createServe(defineComponent: <T>(options: object) => T) {
 
 async function pipedreamToRequest(
     steps: RunOptions["steps"],
-    handler: (request: Request) => Response | Promise<Response>
+    handler: (request: Request) => Response | Promise<Response>,
 ) {
     const event = steps.trigger.event
     const url = new URL(event.url)

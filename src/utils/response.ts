@@ -55,10 +55,18 @@ export const AcaoResponse = createResponse({
  * based on the input response, returns a new response with given headers & status
  */
 export function transformResponse(response: Response, init: ResponseInit): Response
-export function transformResponse(response: Response, mapper: (init: ResponseInit) => ResponseInit): Response
-export function transformResponse(response: Response, mapper: ((init: ResponseInit) => ResponseInit) | ResponseInit) {
+export function transformResponse(
+    response: Response,
+    mapper: (init: ResponseInit) => ResponseInit,
+): Response
+export function transformResponse(
+    response: Response,
+    mapper: ((init: ResponseInit) => ResponseInit) | ResponseInit,
+) {
     return new Response(
         response.body,
-        typeof mapper === "function" ? mapper({ status: response.status, headers: response.headers }) : mapper
+        typeof mapper === "function"
+            ? mapper({ status: response.status, headers: response.headers })
+            : mapper,
     )
 }

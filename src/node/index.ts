@@ -52,7 +52,7 @@ export function serve(
         port?: number
         onError?: (error: unknown) => Response | Promise<Response>
         onListen?: (params: { hostname: string; port: number }) => void
-    }
+    },
 ) {
     const onErrorDefault = (e: unknown) => {
         console.error(e)
@@ -79,6 +79,6 @@ export function serve(
             (({ hostname, port }) => {
                 console.log(`Listening on http://${hostname}:${port}`)
             })
-        )({ hostname: "localhost", port })
+        )({ hostname: "localhost", port }),
     )
 }

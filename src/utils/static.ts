@@ -86,11 +86,14 @@ type InstanceFn<P extends object = object> = (path: string, ...handlers: Handler
  */
 export function attachStatic<
     P extends object = object,
-    T extends { get: InstanceFn<P>; head: InstanceFn<P> } = { get: InstanceFn<P>; head: InstanceFn<P> }
+    T extends { get: InstanceFn<P>; head: InstanceFn<P> } = {
+        get: InstanceFn<P>
+        head: InstanceFn<P>
+    },
 >(instance: T, path: string, options?: string | Options) {
     if (!path.startsWith("/"))
         throw new Error(
-            `static handler only supports top level instance, so path should begin with '/', receive '${path}'`
+            `static handler only supports top level instance, so path should begin with '/', receive '${path}'`,
         )
 
     // dir may not ends with '/'
@@ -100,7 +103,7 @@ export function attachStatic<
             : // if dir is not specified, get from path
               options?.dir ??
                   // path must starts with '/', so remove prefix '/'
-                  path.slice(1)
+                  path.slice(1),
     )
     if (!Deno.statSync(dir).isDirectory) throw new Error(`'${dir}' is not a directory!'`)
 
@@ -110,7 +113,11 @@ export function attachStatic<
     const handler = async (request: Request) => {
         // helper function, given a path, returns a Response object
         const returnResponse = (path: string) =>
-            fileResponse(path, typeof options === "object" ? options.mediaTypes : undefined, request.method === "HEAD")
+            fileResponse(
+                path,
+                typeof options === "object" ? options.mediaTypes : undefined,
+                request.method === "HEAD",
+            )
 
         // this must starts with '/', as the prefix '/' is from url.pathname
         const filePart = new URL(request.url).pathname.slice(urlPath.length)
