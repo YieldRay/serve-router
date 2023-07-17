@@ -7,9 +7,9 @@ see: <https://deno.com/manual/runtime/http_server_apis>
 
 # usage
 
-we use the latest version of [`path-to-regexp`](https://github.com/pillarjs/path-to-regexp) to match, which is different from what express depends  
+we use the latest version of [`path-to-regexp`](https://github.com/pillarjs/path-to-regexp) for matching, which is different from the version express depends  
 for example, you can use `/**` to match any path in express, but should use `/(.*)` here  
-you may want to test the match syntax via <https://forbeslindesay.github.io/express-route-tester/>
+you may want to test the match syntax via <https://route-tester.surge.sh/>
 
 ```ts
 // use Deno
