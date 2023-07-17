@@ -20,6 +20,7 @@ async function fileResponse(path: string, mediaTypes?: Record<string, string>, h
     if (stat.mtime) Reflect.set(headers, "last-modified", stat.mtime.toUTCString())
     // extract extension from file path
     const ext = realPath.replaceAll("\\", "/").split("/").reverse()[0].split(".").at(-1)
+    // see: https://developer.mozilla.org/en-US/docs/Web/HTTP/Basics_of_HTTP/MIME_types/Common_types
     const contentType = (
         {
             htm: "text/html",
@@ -29,15 +30,21 @@ async function fileResponse(path: string, mediaTypes?: Record<string, string>, h
             mjs: "text/javascript",
             cjs: "text/javascript",
             css: "text/css",
+            sh: "application/x-sh",
             txt: "text/plain",
+            csv: "text/csv",
             json: "application/json",
             xml: "application/xml",
             svg: "image/svg+xml",
             jpg: "image/jpeg",
             jpeg: "image/jpeg",
             png: "image/png",
+            gif: "image/gif",
             webp: "image/webp",
             pdf: "application/pdf",
+            wav: "audio/wav",
+            mp3: "audio/mp3",
+            mp4: "video/mpeg4",
             bin: "application/octet-stream",
             ...mediaTypes,
         } as Record<string, string | undefined>

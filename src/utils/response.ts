@@ -1,21 +1,47 @@
 /**
- * create a Response class with predefined headers & status
+ * overwrite dest Headers with src Headers
+ */
+export function mergeHeaders(dest?: HeadersInit, src?: HeadersInit): Headers {
+    if (!dest) return new Headers(src)
+    const h = new Headers(dest)
+    new Headers(src).forEach((v, k) => h.set(k, v))
+    return h
+}
+
+/**
+ * overwrite dest ResponseInit with src ResponseInit
+ */
+export function mergeResponseInit(dest?: ResponseInit, src?: ResponseInit): ResponseInit {
+    const headers = mergeHeaders(dest?.headers, src?.headers)
+    return {
+        ...dest,
+        ...src,
+        headers,
+    }
+}
+
+/**
+ * create a Response class with pre-defined ResponseInit
  */
 export function createResponse(preInit?: ResponseInit) {
     return class CreatedResponse extends Response {
         constructor(body?: BodyInit | null | undefined, init?: ResponseInit | undefined) {
-            const h = new Headers(preInit?.headers)
-            new Headers(init?.headers).forEach((v, k) => h.set(k, v))
-            // overwrite preInit?.headers with init?.headers
-            delete init?.headers
-            super(body, { status: preInit?.status, ...init, headers: h })
+            super(body, mergeResponseInit(preInit, init))
         }
         static redirect(url: string | URL, status = 302): CreatedResponse {
-            return new this(null, { headers: { location: new URL(url).href }, status })
+            const res = Response.redirect(url, status)
+            return new this(res.body, mergeResponseInit(preInit, res))
+        }
+        static json(data: unknown, init?: ResponseInit) {
+            const res = Response.json(data, init)
+            return new this(res.body, mergeResponseInit(preInit, res))
         }
     }
 }
 
+/**
+ * Response class with pre-defined access-control-* headers
+ */
 export const AcaoResponse = createResponse({
     headers: {
         "access-control-allow-origin": "*",
