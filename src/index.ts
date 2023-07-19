@@ -7,19 +7,6 @@ export interface Handler<P extends object = object> {
         | Promise<Response | void>
 }
 
-class MatcherProvider {
-    private _map = new Map<string, MatchFunction>()
-    get(path: string): MatchFunction {
-        if (this._map.has(path)) {
-            return this._map.get(path)!
-        } else {
-            const matcher = match(path)
-            this._map.set(path, matcher)
-            return matcher
-        }
-    }
-}
-
 export default function (
     options?: Partial<{
         onError(e: unknown, detail: Parameters<Handler>): ReturnType<Handler>
@@ -41,7 +28,19 @@ export default function (
 
     const records: Records = []
 
-    const matcherProvider = new MatcherProvider()
+    // given a path string, returns a matcher function
+    const matcherProvider = new (class {
+        private _map = new Map<string, MatchFunction>()
+        get(path: string): MatchFunction {
+            if (this._map.has(path)) {
+                return this._map.get(path)!
+            } else {
+                const matcher = match(path)
+                this._map.set(path, matcher)
+                return matcher
+            }
+        }
+    })()
 
     function addRecord<P extends object = object>(
         method: string,
