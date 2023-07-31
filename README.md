@@ -13,13 +13,14 @@ you may want to test the match syntax via <https://route-tester.surge.sh/>
 
 ```ts
 // use Deno
-import { serve } from "https://deno.land/std@0.194.0/http/server.ts"
 import App from "https://esm.sh/serve-router@latest"
+const { serve } = Deno
 
 // use Node.js >= 16
-import { serve } from "serve-router/node"
 import App from "serve-router"
+import { serve } from "serve-router/node"
 
+// start application
 const app = App()
 
 app.get("/", (_req) => new Response("Hello, world!"))
@@ -42,6 +43,15 @@ app.route("/api")
     .get("/one", () => new Response("one"))
     // for /api/two
     .get("/two", () => new Response("two"))
+
+// Pitfall:
+// only the last Response object you returns send to the client
+// the third parameter is the last Response object returned by previous handler (if given)
+// keep in mind that you should check it to determinate if a Response is already given
+// otherwise you may have your correct Response overwritten!
+app.all("/(.*)", (_req, _ctx, res) => {
+    if (!res) return new Response("Oops! nothing here!", { status: 404 })
+})
 
 serve(app.export)
 ```
