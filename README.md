@@ -1,8 +1,8 @@
 # serve-router
 
 a small express like library that routes for your http server  
-build for deno's [`serve()`](https://deno.land/std/http/server.ts) api, which is compatible with some serverless platform  
-e.g. `Cloudflare Workers`  
+build for deno's [`Deno.serve()`](https://deno.land/api?s=Deno.serve) api, which is compatible with some serverless platform  
+e.g. [`Cloudflare Workers`](https://workers.dev/) [`val.town Web API`](https://www.val.town/v/yieldray.serve_router)  
 see: <https://deno.com/manual/runtime/http_server_apis>
 
 # usage
