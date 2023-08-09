@@ -13,15 +13,15 @@ you may want to test the match syntax via <https://route-tester.surge.sh/>
 
 ```ts
 // use Deno
-import App from "https://esm.sh/serve-router@latest"
+import ServeRouter from "https://esm.sh/serve-router@latest"
 const { serve } = Deno
 
 // use Node.js >= 16
-import App from "serve-router"
+import ServeRouter from "serve-router"
 import { serve } from "serve-router/node"
 
 // start application
-const app = App()
+const app = ServeRouter()
 
 app.get("/", (_req) => new Response("Hello, world!"))
 
@@ -45,12 +45,23 @@ app.route("/api")
     .get("/two", () => new Response("two"))
 
 // Pitfall:
-// only the last Response object you returns send to the client
-// the third parameter is the last Response object returned by previous handler (if given)
-// keep in mind that you should check it to determinate if a Response is already given
-// otherwise you may have your correct Response overwritten!
+// only the first Response object you returns send to the client
+// it throws if you return a Response for the same path twice time
+// the third parameter is the Response object returned by previous handlers
+// it is null if no Response is returned
 app.all("/(.*)", (_req, _ctx, res) => {
-    if (!res) return new Response("Oops! nothing here!", { status: 404 })
+    if (!res) return new Response("Oops! No Response for you!", { status: 404 })
+})
+
+// you can return an array with it's first element is a Response
+// to force override previous Response
+app.get("/override", () => {
+    return [new Response("force override")]
+})
+
+// revoke previous Response
+app.get("/404", () => {
+    return [undefined]
 })
 
 serve(app.export)
@@ -59,27 +70,37 @@ serve(app.export)
 # advanced
 
 `serve-router` does not support `next()` function like express,  
-however you can use two additional handlers to emulate it, like this
+however you can add two additional handlers to emulate it, like this
 
 ```ts
-import App from "serve-router"
-import { attachStatic } from "serve-router/utils"
+// this example use Deno
+import App from "https://esm.sh/serve-router@latest"
+import { serveDir } from "https://deno.land/std/http/file_server.ts"
 
 const app = App()
 
-app.all("/(.*)", (req: Request, ctx: any) => {
+app.all("/(.*)", (req: Request, ctx: Record<keyof any, any>) => {
     ctx.beginTime = Date.now()
     console.log("[prehandle]  ", req.method, req.url)
 })
 
-// `attachStatic` can only be used in deno
-attachStatic(app, "/", "public")
+app.all("/static/(.*)", (req: Request) => {
+    return serveDir(req, {
+        urlRoot: "static",
+        fsRoot: "public",
+    })
+})
 
-app.all("/(.*)", (req, ctx: any, res: Response | null) => {
+app.all("/(.*)", (_req: Request, ctx: Record<keyof any, any>, res: Response | null) => {
     const endTime = Date.now()
     const { beginTime } = ctx
-    console.log("[posthandle] ", `Returned ${res!.status} in ${endTime - beginTime}ms`)
+    console.log(
+        "[posthandle] ",
+        `Returned ${res ? res.status : "nothing"} in ${endTime - beginTime}ms`
+    )
 })
+
+Deno.serve(app.export)
 ```
 
 # build

@@ -1,19 +1,26 @@
 import { match, type MatchFunction, type MatchResult } from "./path-to-regexp/index.js"
 
+export class ServeRouterError extends Error {
+    override name = "ServeRouterError"
+}
+
 export interface Handler<P extends object = object> {
     (request: Request, matches: MatchResult<P>, response: Response | null):
         | Response
         | void
-        | Promise<Response | void>
+        | Promise<Response | [Response] | void>
 }
 
-export default function (
+export default function ServeRouter(
     options?: Partial<{
         onError(e: unknown, detail: Parameters<Handler>): ReturnType<Handler>
     }>
 ) {
-    const onErrorDefault = (e: unknown) => {
-        console.error(e)
+    // prevent call by `new`
+    if (new.target) throw new ServeRouterError("ServeRouter() is not a constructor")
+
+    const onErrorDefault = (e: unknown, detail: Parameters<Handler>) => {
+        console.error(e, detail)
         return new Response("Internal Server Error", { status: 500 })
     }
     const onError = options?.onError || onErrorDefault
@@ -81,21 +88,43 @@ export default function (
             for (const handler of handlers) {
                 try {
                     // handler can be sync or async
-                    const res = await handler(request, matched, response)
+                    const handlerResp = await handler(request, matched, response)
+                    const resp = Array.isArray(handlerResp) ? handlerResp[0] : handlerResp
+                    const overrideLabel = Array.isArray(handlerResp)
 
-                    if (res instanceof Response) {
-                        // replace last response with new one
-                        response = res
+                    // 1
+                    if (resp instanceof Response) {
+                        if (overrideLabel) {
+                            response = resp
+                        } else {
+                            if (response) {
+                                throw new ServeRouterError(
+                                    "duplicated Response returned by handler"
+                                )
+                            } else {
+                                response = resp
+                            }
+                        }
                     }
-                    // if not return a Response, find the next one
-                    else continue
+                    // 2
+                    else if (resp === undefined) {
+                        if (overrideLabel) {
+                            response = null
+                        } else {
+                            continue
+                        }
+                    }
+                    // 3
+                    else {
+                        throw new ServeRouterError("handlers can only return Response or void")
+                    }
                 } catch (e) {
                     // the handler() may throw error
                     // when one handler throws, we stop any next handler and returns error response
-                    const res = await onError(e, [request, matched, response])
+                    const resp = await onError(e, [request, matched, response])
                     // if not return a Response, stop to find and return 500 to client
-                    if (res instanceof Response) return res
-                    else return onErrorDefault(e)
+                    if (resp instanceof Response) return resp
+                    else return onErrorDefault(e, [request, matched, response])
                 }
             }
         }
