@@ -12,11 +12,9 @@ export function mergeHeaders(dest?: HeadersInit, src?: HeadersInit): Headers {
  * overwrite dest ResponseInit with src ResponseInit
  */
 export function mergeResponseInit(dest?: ResponseInit, src?: ResponseInit): ResponseInit {
-    const headers = mergeHeaders(dest?.headers, src?.headers)
     return {
-        ...dest,
-        ...src,
-        headers,
+        headers: mergeHeaders(dest?.headers, src?.headers),
+        status: dest?.status ?? src?.status,
     }
 }
 
@@ -45,7 +43,7 @@ export function createResponse(preInit?: ResponseInit) {
 /**
  * Response class with pre-defined access-control-* headers
  */
-export const AcaoResponse = createResponse({
+export const CORSResponse = createResponse({
     headers: {
         "Access-Control-Allow-Origin": "*",
         "Access-Control-Allow-Method": "*",

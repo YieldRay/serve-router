@@ -1,7 +1,7 @@
 {
     "name": "serve-router",
     "author": "YieldRay",
-    "version": "0.4.0",
+    "version": "0.4.1",
     "type": "module",
     "main": "dist/index.js",
     "types": "dist/index.d.ts",
@@ -14,7 +14,8 @@
         "./utils/": "./dist/utils/"
     },
     "scripts": {
-        "build": "rm -rf ./dist && tsc"
+        "build": "rm -rf ./dist && tsc",
+        "test": "deno test test/"
     },
     "license": "MIT",
     "repository": {

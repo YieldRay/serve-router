@@ -124,7 +124,7 @@ export default function ServeRouter(
                     const resp = await onError(e, [request, matched, response])
                     // if not return a Response, stop to find and return 500 to client
                     if (resp instanceof Response) return resp
-                    else return onErrorDefault(e, [request, matched, response])
+                    else return new Response("Internal Server Error", { status: 500 })
                 }
             }
         }

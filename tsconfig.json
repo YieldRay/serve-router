@@ -1,16 +1,18 @@
 {
     "compilerOptions": {
         "strict": true,
-        "target": "ESNext",
-        "lib": ["ESNext", "DOM"],
-        "module": "ESNext",
         "declaration": true,
+        "target": "ESNext",
+        "module": "ESNext",
+        "lib": ["ESNext", "DOM"],
+        "moduleResolution": "NodeNext",
         "esModuleInterop": true,
-        "moduleResolution": "nodenext",
         "allowJs": true,
         "checkJs": false,
-        "forceConsistentCasingInFileNames": true,
         "skipLibCheck": true,
+        "allowImportingTsExtensions": false,
+        "forceConsistentCasingInFileNames": true,
+        "useDefineForClassFields": true,
         "outDir": "dist"
     },
     "include": ["src/**/*"]
