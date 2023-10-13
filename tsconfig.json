@@ -3,7 +3,7 @@
         "strict": true,
         "declaration": true,
         "target": "ESNext",
-        "module": "ESNext",
+        "module": "NodeNext",
         "lib": ["ESNext", "DOM"],
         "moduleResolution": "NodeNext",
         "esModuleInterop": true,

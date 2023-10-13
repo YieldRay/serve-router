@@ -1,4 +1,4 @@
-import fetch, { Request, Response, Headers } from "node-fetch"
+import fetch, { Request, Response, Headers } from "undici"
 import { Pipedream } from "@pipedream/types"
 
 /**

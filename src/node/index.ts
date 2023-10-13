@@ -1,7 +1,43 @@
 import http from "node:http"
 import { Duplex, Readable } from "node:stream"
 import type { ReadableStream } from "node:stream/web"
+import type { AddressInfo } from "node:net"
 
+export interface ServeHandlerInfo {
+    remoteAddr: {
+        transport: "tcp" | "udp"
+        hostname: string
+        port: number
+    }
+}
+
+export type ServeHandler = (
+    request: Request,
+    info: ServeHandlerInfo,
+) => Response | Promise<Response>
+
+export interface ServeOptions {
+    /**
+     * @default {8000}
+     */
+    port?: number
+    hostname?: string
+    signal?: AbortSignal
+    /**
+     * @warn Not Supported
+     */
+    reusePort?: boolean
+    onError?: (error: unknown) => Response | Promise<Response>
+    onListen?: (params: { hostname: string; port: number }) => void
+}
+
+export interface ServeInit {
+    handler: ServeHandler
+}
+
+/**
+ * Transform node.js http.IncomingMessage to web Request
+ */
 export function incoming2request(req: http.IncomingMessage): Request {
     const method = req.method ?? "GET"
     let body = undefined
@@ -19,17 +55,20 @@ export function incoming2request(req: http.IncomingMessage): Request {
         }
     }
 
-    if (!req.url) req.url = "/"
-    if (!req.headers.host) throw new Error("the headers 'Host' is unset")
+    const path = req.url ?? "/"
+    const host: string = req.headers.host ?? (req.socket.address() as AddressInfo).address
 
     // const protocal = (req.socket as { encrypted?: boolean }).encrypted ? "https" : "http";
-    return new Request(new URL(req.url, `http://${req.headers.host}`), {
+    return new Request(new URL(path, `http://${host}`), {
         method,
         headers,
         body,
     })
 }
 
+/**
+ * Forward web Response for http.ServerResponse
+ */
 export function response4server(res: http.ServerResponse, resp: Response) {
     res.statusCode = resp.status
     resp.headers.forEach(([key, value]) => {
@@ -46,39 +85,69 @@ export function response4server(res: http.ServerResponse, resp: Response) {
     }
 }
 
+/**
+ * Implement Deno's `Deno.serve()` function for node.js
+ * @warn Returns node.js `http.Server`, rather than `Deno.Server`
+ */
+export function serve(handler: ServeHandler): http.Server
+export function serve(options: ServeOptions, handler: ServeHandler): http.Server
+export function serve(options: ServeInit & ServeOptions): http.Server
 export function serve(
-    handler: (request: Request) => Response | Promise<Response>,
-    options?: {
-        port?: number
-        onError?: (error: unknown) => Response | Promise<Response>
-        onListen?: (params: { hostname: string; port: number }) => void
-    },
+    options: ServeHandler | ServeOptions | (ServeInit & ServeOptions),
+    handler?: ServeHandler,
 ) {
+    const serveHandler: ServeHandler | undefined =
+        handler || typeof options === "function"
+            ? (options as ServeHandler)
+            : "handler" in options
+            ? options.handler
+            : undefined
+
+    if (!serveHandler) throw new TypeError("A handler function must be provided.")
+
     const onErrorDefault = (e: unknown) => {
         console.error(e)
         return new Response("Internal Server Error", { status: 500 })
     }
-    const port = options?.port ?? 3000
-    http.createServer(async (req, res) => {
-        try {
-            const webReq = incoming2request(req)
-            const webRes = await handler(webReq)
-            response4server(res, webRes)
-        } catch (e) {
-            const onError = options?.onError?.bind(options.onError) || onErrorDefault
+
+    const serveOptions: ServeOptions = typeof options !== "function" ? options : {}
+
+    const port = serveOptions.port ?? 8000
+
+    const server = http
+        .createServer(async (req, res) => {
             try {
-                // in case options.onError() throw any error
-                response4server(res, await onError(e))
-            } catch {
-                response4server(res, onErrorDefault(e))
+                const webReq = incoming2request(req)
+                const webRes = await serveHandler(webReq, {
+                    remoteAddr: {
+                        transport: "tcp",
+                        hostname: req.socket.remoteAddress!,
+                        port: req.socket.remotePort!,
+                    },
+                })
+                response4server(res, webRes)
+            } catch (e) {
+                const onError = serveOptions.onError?.bind(serveOptions.onError) || onErrorDefault
+                try {
+                    // in case options.onError() throw any error
+                    response4server(res, await onError(e))
+                } catch {
+                    response4server(res, onErrorDefault(e))
+                }
             }
-        }
-    }).listen(port, () =>
-        (
-            options?.onListen ||
-            (({ hostname, port }) => {
-                console.log(`Listening on http://${hostname}:${port}`)
-            })
-        )({ hostname: "localhost", port }),
-    )
+        })
+        .listen(port, () =>
+            (
+                serveOptions.onListen ||
+                (({ hostname, port }) => {
+                    console.log(`Listening on http://${hostname}:${port}`)
+                })
+            )({ hostname: "localhost", port }),
+        )
+
+    serveOptions.signal?.addEventListener("abort", () => {
+        server.close()
+    })
+
+    return server
 }

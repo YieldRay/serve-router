@@ -20,10 +20,14 @@ const { serve } = Deno
 import ServeRouter from "serve-router"
 import { serve } from "serve-router/node"
 
-// start application
-const app = ServeRouter()
+// init application
+const app = ServeRouter({ context: { hello: "world" } })
 
-app.get("/", (_req) => new Response("Hello, world!"))
+app.all("/(.*)", (_req, ctx) => {
+    console.assert(ctx.hello, "world")
+})
+
+app.get("/", () => new Response("Hello, world!"))
 
 app.get("/headers", (req: Request) => Response.json(Object.fromEntries(req.headers.entries())))
 
@@ -46,25 +50,22 @@ app.route("/api")
 
 // Pitfall:
 // only the first Response object you returns send to the client
-// it throws if you return a Response for the same path twice time
-// the third parameter is the Response object returned by previous handlers
-// it is null if no Response is returned
 app.all("/(.*)", (_req, _ctx, res) => {
-    if (!res) return new Response("Oops! No Response for you!", { status: 404 })
+    return new Response("Oops! No Response for you!", { status: 404 })
 })
 
 // you can return an array with it's first element is a Response
 // to force override previous Response
-app.get("/override", () => {
-    return [new Response("force override")]
+app.get("/404", () => {
+    return [new Response("404", { status: 404 })]
 })
 
 // revoke previous Response
-app.get("/404", () => {
+app.get("/nothing", () => {
     return [undefined]
 })
 
-serve(app.export)
+serve(app.fetch)
 ```
 
 # advanced
@@ -74,33 +75,34 @@ however you can add two additional handlers to emulate it, like this
 
 ```ts
 // this example use Deno
-import App from "https://esm.sh/serve-router@latest"
+import ServeRouter from "https://esm.sh/serve-router@latest"
 import { serveDir } from "https://deno.land/std/http/file_server.ts"
 
-const app = App()
+const app = ServeRouter()
+// OR: const app = ServeRouter<{ beginTime: number }>()
 
-app.all("/(.*)", (req: Request, ctx: Record<keyof any, any>) => {
+app.all<{}, { beginTime: number }>("/(.*)", (req: Request, ctx) => {
     ctx.beginTime = Date.now()
     console.log("[prehandle]  ", req.method, req.url)
 })
 
-app.all("/static/(.*)", (req: Request) => {
-    return serveDir(req, {
+app.all("/static/(.*)", (req) =>
+    serveDir(req, {
         urlRoot: "static",
         fsRoot: "public",
-    })
-})
+    }),
+)
 
-app.all("/(.*)", (_req: Request, ctx: Record<keyof any, any>, res: Response | null) => {
+app.all<{}, { beginTime: number }>("/(.*)", (_req: Request, ctx, res: Response | null) => {
     const endTime = Date.now()
     const { beginTime } = ctx
     console.log(
         "[posthandle] ",
-        `Returned ${res ? res.status : "nothing"} in ${endTime - beginTime}ms`
+        `Returned ${res ? res.status : "nothing"} in ${endTime - beginTime}ms`,
     )
 })
 
-Deno.serve(app.export)
+Deno.serve(app.fetch)
 ```
 
 # build
