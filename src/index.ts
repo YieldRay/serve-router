@@ -1,4 +1,4 @@
-import { match, type MatchFunction, type MatchResult } from "./path-to-regexp/index.js"
+import { match } from "./utils/match.js"
 
 /**
  * This Error class allow you to distinct if error is thrown by serve-router
@@ -9,15 +9,19 @@ export class ServeRouterError extends Error {
 
 type ServeRouterResponse = Response | void | [Response | void]
 
-export interface ServeRouterHandler<P extends object = object, R extends object = {}> {
-    (
-        request: Request,
-        context: MatchResult<P> & R,
-        response: Response | null,
-    ): ServeRouterResponse | Promise<ServeRouterResponse>
+type TContext = Exclude<object, "params">
+type TParams = Exclude<ReturnType<typeof match>, undefined>
+
+export interface ServeRouterHandler<
+    Params extends TParams = TParams,
+    Context extends TContext = {}
+> {
+    (request: Request, context: { params: Params } & Context, response: Response | null):
+        | ServeRouterResponse
+        | Promise<ServeRouterResponse>
 }
 
-export interface ServeRouterOptions<Ctx extends Exclude<object, keyof MatchResult> = {}> {
+export interface ServeRouterOptions<Context extends TContext = {}> {
     /**
      * Callback function when a registered handler throws, this callback capture the error variable
      * and parameters the handler consumes.
@@ -35,7 +39,7 @@ export interface ServeRouterOptions<Ctx extends Exclude<object, keyof MatchResul
     /**
      * @default {}
      */
-    context?: Ctx | ((request: Request) => Ctx | Promise<Ctx>)
+    context?: Context | ((request: Request) => Context | Promise<Context>)
 }
 
 /**
@@ -46,8 +50,8 @@ export interface ServeRouterOptions<Ctx extends Exclude<object, keyof MatchResul
  * Deno.serve(app.fetch)
  * ```
  */
-export default function ServeRouter<S extends Exclude<object, keyof MatchResult> = {}>(
-    options?: ServeRouterOptions<S>,
+export default function ServeRouter<Context extends TContext = {}>(
+    options?: ServeRouterOptions<Context>
 ) {
     // prevent call by `new`
     if (new.target) throw new ServeRouterError("ServeRouter() is not a constructor")
@@ -58,40 +62,25 @@ export default function ServeRouter<S extends Exclude<object, keyof MatchResult>
     }
     const onError = options?.onError || onErrorDefault
 
-    type Record<P extends object = object> = {
+    type Record = {
         method: string
         path: string
-        matcher: MatchFunction<P>
-        handlers: ServeRouterHandler<P, any>[]
+        handlers: ServeRouterHandler<any, any>[]
     }
-    type Records = Record<any>[]
 
-    const records: Records = []
+    // store records added by instance methods
+    const records: Record[] = []
 
-    // given a path string, returns a matcher function
-    const matcherProvider = new (class {
-        private _map = new Map<string, MatchFunction>()
-        get(path: string): MatchFunction {
-            if (this._map.has(path)) {
-                return this._map.get(path)!
-            } else {
-                const matcher = match(path)
-                this._map.set(path, matcher)
-                return matcher
-            }
-        }
-    })()
-
-    function addRecord<P extends object = object, R extends object = {}>(
+    // just a helper function for adding a record
+    function addRecord<Params extends TParams, Context extends TContext>(
         method: string,
         path: string,
-        ...handlers: ServeRouterHandler<P, R>[]
+        ...handlers: ServeRouterHandler<Params, Context>[]
     ) {
         records.push({
             method,
             path,
             handlers,
-            matcher: matcherProvider.get(path),
         })
     }
 
@@ -106,7 +95,7 @@ export default function ServeRouter<S extends Exclude<object, keyof MatchResult>
                     ? await options.context(request)
                     : options.context
                 : {}
-        ) as MatchResult & S
+        ) as Context & { params: TParams }
 
         if (typeof context !== "object")
             throw new TypeError("context should be an object or return an object")
@@ -120,12 +109,12 @@ export default function ServeRouter<S extends Exclude<object, keyof MatchResult>
             if (record.method !== "*" && record.method !== request.method) continue
 
             // check if request pathname is matched
-            const { matcher, handlers } = record
-            const matches = matcher(url.pathname)
+            const { path, handlers } = record
+            const matches = match(path, request.url)
             if (!matches) continue
 
             // assign matches to context object
-            Object.assign(context, matches)
+            Reflect.set(context, "params", matches)
             for (const handler of handlers) {
                 try {
                     // handler can be sync or async
@@ -141,7 +130,7 @@ export default function ServeRouter<S extends Exclude<object, keyof MatchResult>
                             if (response) {
                                 if (options?.throwOnDuplicatedResponse) {
                                     throw new ServeRouterError(
-                                        "duplicated Response returned by handler",
+                                        "duplicated Response returned by handler"
                                     )
                                 } else {
                                     continue
@@ -186,59 +175,59 @@ export default function ServeRouter<S extends Exclude<object, keyof MatchResult>
     function createInstance(prefix = "") {
         const array = <T>(item: T | T[]) => (Array.isArray(item) ? item : [item])
         return {
-            get: function <
-                P extends object = object,
-                R extends Exclude<object, keyof MatchResult> = {},
-            >(path: string | string[], ...handlers: ServeRouterHandler<P, R & S>[]): typeof this {
+            get: function <Params extends TParams = {}, Context extends TContext = {}>(
+                path: string | string[],
+                ...handlers: ServeRouterHandler<Params, Context>[]
+            ): typeof this {
                 array(path).forEach((p) => addRecord("GET", prefix + p, ...handlers))
                 return this
             },
-            head: function <
-                P extends object = object,
-                R extends Exclude<object, keyof MatchResult> = {},
-            >(path: string | string[], ...handlers: ServeRouterHandler<P, R & S>[]): typeof this {
+            head: function <Params extends TParams = {}, Context extends TContext = {}>(
+                path: string | string[],
+                ...handlers: ServeRouterHandler<Params, Context>[]
+            ): typeof this {
                 array(path).forEach((p) => addRecord("HEAD", prefix + p, ...handlers))
                 return this
             },
-            post: function <
-                P extends object = object,
-                R extends Exclude<object, keyof MatchResult> = {},
-            >(path: string | string[], ...handlers: ServeRouterHandler<P, R & S>[]): typeof this {
+            post: function <Params extends TParams = {}, Context extends TContext = {}>(
+                path: string | string[],
+                ...handlers: ServeRouterHandler<Params, Context>[]
+            ): typeof this {
                 array(path).forEach((p) => addRecord("POST", prefix + p, ...handlers))
                 return this
             },
-            put: function <
-                P extends object = object,
-                R extends Exclude<object, keyof MatchResult> = {},
-            >(path: string | string[], ...handlers: ServeRouterHandler<P, R & S>[]): typeof this {
+            put: function <Params extends TParams = {}, Context extends TContext = {}>(
+                path: string | string[],
+                ...handlers: ServeRouterHandler<Params, Context>[]
+            ): typeof this {
                 array(path).forEach((p) => addRecord("PUT", prefix + p, ...handlers))
                 return this
             },
-            delete: function <
-                P extends object = object,
-                R extends Exclude<object, keyof MatchResult> = {},
-            >(path: string | string[], ...handlers: ServeRouterHandler<P, R & S>[]): typeof this {
+            delete: function <Params extends TParams = {}, Context extends TContext = {}>(
+                path: string | string[],
+                ...handlers: ServeRouterHandler<Params, Context>[]
+            ): typeof this {
                 array(path).forEach((p) => addRecord("DELETE", prefix + p, ...handlers))
                 return this
             },
-            options: function <
-                P extends object = object,
-                R extends Exclude<object, keyof MatchResult> = {},
-            >(path: string | string[], ...handlers: ServeRouterHandler<P, R & S>[]): typeof this {
+            options: function <Params extends TParams = {}, Context extends TContext = {}>(
+                path: string | string[],
+                ...handlers: ServeRouterHandler<Params, Context>[]
+            ): typeof this {
                 array(path).forEach((p) => addRecord("OPTIONS", prefix + p, ...handlers))
                 return this
             },
-            patch: function <
-                P extends object = object,
-                R extends Exclude<object, keyof MatchResult> = {},
-            >(path: string | string[], ...handlers: ServeRouterHandler<P, R & S>[]): typeof this {
+            patch: function <Params extends TParams = {}, Context extends TContext = {}>(
+                path: string | string[],
+                ...handlers: ServeRouterHandler<Params, Context>[]
+            ): typeof this {
                 array(path).forEach((p) => addRecord("PATCH", prefix + p, ...handlers))
                 return this
             },
-            all: function <
-                P extends object = object,
-                R extends Exclude<object, keyof MatchResult> = {},
-            >(path: string | string[], ...handlers: ServeRouterHandler<P, R & S>[]): typeof this {
+            all: function <Params extends TParams = {}, Context extends TContext = {}>(
+                path: string | string[],
+                ...handlers: ServeRouterHandler<Params, Context>[]
+            ): typeof this {
                 array(path).forEach((p) => addRecord("*", prefix + p, ...handlers))
                 return this
             },

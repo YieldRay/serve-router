@@ -1,32 +1,36 @@
 # serve-router
 
-a small express like library that routes for your http server  
-build for deno's [`Deno.serve()`](https://deno.land/api?s=Deno.serve) api, which is compatible with some serverless platform  
-e.g. [`Cloudflare Workers`](https://workers.dev/) [`val.town Web API`](https://www.val.town/v/yieldray.serve_router)  
+A small express like library that routes for your http server.
+
+Build for deno's [`Deno.serve()`](https://deno.land/api?s=Deno.serve) api, which also compatible with some serverless platform.  
+e.g. [`Bun.serve()`](https://bun.sh/docs/api/http#bun-serve) [`Cloudflare Workers`](https://workers.dev/) [`val.town Web API`](https://www.val.town/v/yieldray.serve_router)  
 see: <https://deno.com/manual/runtime/http_server_apis>
 
-# usage
+# Usage
 
-we use the latest version of [`path-to-regexp`](https://github.com/pillarjs/path-to-regexp) for matching, which is different from the version express depends  
-for example, you can use `/**` to match any path in express, but should use `/(.*)` here  
-you may want to test the match syntax via <https://route-tester.surge.sh/>
+We use the [`URL Pattern API`](https://developer.mozilla.org/en-US/docs/Web/API/URL_Pattern_API) for matching.  
+It's based on the [`path-to-regexp`](https://github.com/pillarjs/path-to-regexp) library, the one that express depends.  
+For details, see [the standard](https://urlpattern.spec.whatwg.org/).
+
+For environment that does not support `URLPattern()`, just import [`urlpattern-polyfill`](https://www.npmjs.com/package/urlpattern-polyfill).
+
+Requirement: support Web Standard API: `Request` `Response`.  
+For node.js < 18, this means polyfill is required.
 
 ```ts
 // use Deno
 import ServeRouter from "https://esm.sh/serve-router@latest"
-const { serve } = Deno
+const { serve } = Deno // Deno >= 1.15 support URLPattern()
 
-// use Node.js >= 16
+// use Node.js >= 18
+import "urlpattern-polyfill" // Node.js does not support URLPattern() currently
 import ServeRouter from "serve-router"
-import { serve } from "serve-router/node"
+import { serve } from "serve-router/node" // polyfill for Deno.serve()
 
-// or use this to auto detect deno or node
-import { serve } from "serve-router/shim"
-
-// init application
+// init application (context is optional)
 const app = ServeRouter({ context: { hello: "world" } })
 
-app.all("/(.*)", (_req, ctx) => {
+app.all("/*", (_req, ctx) => {
     console.assert(ctx.hello, "world")
 })
 
@@ -69,14 +73,42 @@ app.get("/nothing", () => {
 })
 
 serve(app.fetch)
+```
 
-// if you only want to run it in node.js, you can 
-// convert it into a node.js http middleware like this
+If you only want to run it in node.js, you can convert it into a node.js http middleware like this:
+
+```js
+import "urlpattern-polyfill"
 import { d2n } from "serve-router/node"
+const app = ServeRouter()
+app.get("/", () => new Response("Hello, world!"))
 http.createServer(d2n(app.fetch)).listen(8080)
 ```
 
-# advanced
+This library has basic `require()` support (for node.js)
+
+```js
+require("urlpattern-polyfill")
+const { ServeRouter, serve, d2n } = require("serve-router")
+const app = ServeRouter()
+app.get("/", () => new Response("Hello, world!"))
+
+serve({ handler: app.fetch, port: 8080 })
+// or
+http.createServer(d2n(app.fetch)).listen(8080)
+```
+
+For `Cloudflare Workers` and `Bun`
+
+```js
+const app = ServeRouter()
+app.get("/", () => new Response("Hello, world!"))
+export default {
+    fetch: app.fetch,
+}
+```
+
+# Advanced
 
 `serve-router` does not support `next()` function like express,  
 however you can add two additional handlers to emulate it, like this
@@ -113,15 +145,11 @@ app.all<{}, { beginTime: number }>("/(.*)", (_req: Request, ctx, res: Response |
 Deno.serve(app.fetch)
 ```
 
-# build
+# Build
 
 ```sh
 git clone https://github.com/YieldRay/serve-router.git
 cd serve-router
-
 pnpm install
-mkdir -p src/path-to-regexp
-curl -fSskL https://github.com/pillarjs/path-to-regexp/raw/master/src/index.ts -o src/path-to-regexp/index.ts
-
 pnpm run build
 ```

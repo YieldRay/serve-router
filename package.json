@@ -1,21 +1,27 @@
 {
     "name": "serve-router",
     "author": "YieldRay",
-    "version": "0.5.1",
+    "version": "0.6.1",
     "type": "module",
     "main": "dist/index.js",
     "types": "dist/index.d.ts",
+    "files": [
+        "src/",
+        "dist/"
+    ],
     "exports": {
-        ".": "./dist/index.js",
+        ".": {
+            "import": "./dist/index.js",
+            "require": "./dist/index.cjs"
+        },
         "./node": "./dist/node/index.js",
         "./pipedream": "./dist/pipedream/index.js",
-        "./shim": "./dist/shim/index.js",
-        "./path-to-regexp": "./dist/path-to-regexp/index.js",
         "./utils": "./dist/utils/index.js",
         "./utils/": "./dist/utils/"
     },
     "scripts": {
-        "build": "rm -rf ./dist && tsc",
+        "build": "rm -rf ./dist && tsc && npm run build:cjs",
+        "build:cjs": "esbuild src/require.ts --outfile=dist/index.cjs --format=cjs --platform=node --bundle --minify",
         "test": "deno test test/",
         "preinstall": "npx only-allow pnpm"
     },
@@ -30,7 +36,9 @@
     "homepage": "https://github.com/YieldRay/serve-router#readme",
     "devDependencies": {
         "@pipedream/types": "^0.1.6",
-        "@types/node": "^20.8.7",
-        "typescript": "^5.2.2"
+        "@types/node": "^20.8.8",
+        "typescript": "^5.2.2",
+        "undici": "^5.26.5",
+        "urlpattern-polyfill": "^9.0.0"
     }
 }
