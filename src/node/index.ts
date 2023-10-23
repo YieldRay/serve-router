@@ -13,7 +13,7 @@ export interface ServeHandlerInfo {
 
 export type ServeHandler = (
     request: Request,
-    info: ServeHandlerInfo,
+    info: ServeHandlerInfo
 ) => Response | Promise<Response>
 
 export interface ServeOptions {
@@ -86,6 +86,34 @@ export function response4server(res: http.ServerResponse, resp: Response) {
 }
 
 /**
+ * Deno To Node (d2n)
+ *
+ * Convert deno's serve handler to nodejs's http request handler.
+ *
+ * @example
+ * const app = ServeRouter()
+ * app.get("/(.*)", () => { })
+ * http.createServer(d2n(app.fetch)).listen(8080)
+ */
+export function d2n(handler: ServeHandler) {
+    const requestHandler: http.RequestListener<
+        typeof http.IncomingMessage,
+        typeof http.ServerResponse
+    > = async (req, res) => {
+        const webReq = incoming2request(req)
+        const webRes = await handler(webReq, {
+            remoteAddr: {
+                transport: "tcp",
+                hostname: req.socket.remoteAddress!,
+                port: req.socket.remotePort!,
+            },
+        })
+        response4server(res, webRes)
+    }
+    return requestHandler
+}
+
+/**
  * Implement Deno's `Deno.serve()` function for node.js
  * @warn Returns node.js `http.Server`, rather than `Deno.Server`
  */
@@ -94,7 +122,7 @@ export function serve(options: ServeOptions, handler: ServeHandler): http.Server
 export function serve(options: ServeInit & ServeOptions): http.Server
 export function serve(
     options: ServeHandler | ServeOptions | (ServeInit & ServeOptions),
-    handler?: ServeHandler,
+    handler?: ServeHandler
 ) {
     const serveHandler: ServeHandler | undefined =
         handler || typeof options === "function"
@@ -104,11 +132,6 @@ export function serve(
             : undefined
 
     if (!serveHandler) throw new TypeError("A handler function must be provided.")
-
-    const onErrorDefault = (e: unknown) => {
-        console.error(e)
-        return new Response("Internal Server Error", { status: 500 })
-    }
 
     const serveOptions: ServeOptions = typeof options !== "function" ? options : {}
 
@@ -127,6 +150,10 @@ export function serve(
                 })
                 response4server(res, webRes)
             } catch (e) {
+                const onErrorDefault = (e: unknown) => {
+                    console.error(e)
+                    return new Response("Internal Server Error", { status: 500 })
+                }
                 const onError = serveOptions.onError?.bind(serveOptions.onError) || onErrorDefault
                 try {
                     // in case options.onError() throw any error
@@ -142,7 +169,7 @@ export function serve(
                 (({ hostname, port }) => {
                     console.log(`Listening on http://${hostname}:${port}`)
                 })
-            )({ hostname: "localhost", port }),
+            )({ hostname: "localhost", port })
         )
 
     serveOptions.signal?.addEventListener("abort", () => {

@@ -20,6 +20,9 @@ const { serve } = Deno
 import ServeRouter from "serve-router"
 import { serve } from "serve-router/node"
 
+// or use this to auto detect deno or node
+import { serve } from "serve-router/shim"
+
 // init application
 const app = ServeRouter({ context: { hello: "world" } })
 
@@ -66,6 +69,11 @@ app.get("/nothing", () => {
 })
 
 serve(app.fetch)
+
+// if you only want to run it in node.js, you can 
+// convert it into a node.js http middleware like this
+import { d2n } from "serve-router/node"
+http.createServer(d2n(app.fetch)).listen(8080)
 ```
 
 # advanced
@@ -90,7 +98,7 @@ app.all("/static/(.*)", (req) =>
     serveDir(req, {
         urlRoot: "static",
         fsRoot: "public",
-    }),
+    })
 )
 
 app.all<{}, { beginTime: number }>("/(.*)", (_req: Request, ctx, res: Response | null) => {
@@ -98,7 +106,7 @@ app.all<{}, { beginTime: number }>("/(.*)", (_req: Request, ctx, res: Response |
     const { beginTime } = ctx
     console.log(
         "[posthandle] ",
-        `Returned ${res ? res.status : "nothing"} in ${endTime - beginTime}ms`,
+        `Returned ${res ? res.status : "nothing"} in ${endTime - beginTime}ms`
     )
 })
 

@@ -1,7 +1,7 @@
 {
     "name": "serve-router",
     "author": "YieldRay",
-    "version": "0.5.0",
+    "version": "0.5.1",
     "type": "module",
     "main": "dist/index.js",
     "types": "dist/index.d.ts",
@@ -9,13 +9,15 @@
         ".": "./dist/index.js",
         "./node": "./dist/node/index.js",
         "./pipedream": "./dist/pipedream/index.js",
+        "./shim": "./dist/shim/index.js",
         "./path-to-regexp": "./dist/path-to-regexp/index.js",
         "./utils": "./dist/utils/index.js",
         "./utils/": "./dist/utils/"
     },
     "scripts": {
         "build": "rm -rf ./dist && tsc",
-        "test": "deno test test/"
+        "test": "deno test test/",
+        "preinstall": "npx only-allow pnpm"
     },
     "license": "MIT",
     "repository": {
@@ -28,10 +30,7 @@
     "homepage": "https://github.com/YieldRay/serve-router#readme",
     "devDependencies": {
         "@pipedream/types": "^0.1.6",
-        "@types/node": "^20.8.5",
+        "@types/node": "^20.8.7",
         "typescript": "^5.2.2"
-    },
-    "optionalDependencies": {
-        "undici": "^5.26.3"
     }
 }
