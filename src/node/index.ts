@@ -1,7 +1,14 @@
 import http from "node:http"
-import { Duplex, Readable } from "node:stream"
+import { Readable } from "node:stream"
 import type { ReadableStream } from "node:stream/web"
 import type { AddressInfo } from "node:net"
+
+// fix type issue
+declare global {
+    interface RequestInit {
+        duplex?: string
+    }
+}
 
 export interface ServeHandlerInfo {
     remoteAddr: {
@@ -42,9 +49,7 @@ export function incoming2request(req: http.IncomingMessage): Request {
     const method = req.method ?? "GET"
     let body = undefined
     if (!["HEAD", "GET"].includes(method.toUpperCase())) {
-        const dp = new Duplex()
-        req.pipe(dp)
-        body = Readable.toWeb(dp) as globalThis.ReadableStream
+        body = Readable.toWeb(req) as globalThis.ReadableStream
     }
     const headers = new Headers()
     for (const [key, value] of Object.entries(req.headers)) {
@@ -63,6 +68,7 @@ export function incoming2request(req: http.IncomingMessage): Request {
         method,
         headers,
         body,
+        duplex: "half",
     })
 }
 

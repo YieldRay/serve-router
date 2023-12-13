@@ -57,7 +57,7 @@ app.route("/api")
 
 // Pitfall:
 // only the first Response object you returns send to the client
-app.all("/(.*)", (_req, _ctx, res) => {
+app.all("/*", (_req, _ctx, res) => {
     return new Response("Oops! No Response for you!", { status: 404 })
 })
 

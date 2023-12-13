@@ -1,6 +1,6 @@
 // @ts-nocheck
 import { assertEquals } from "https://deno.land/std/testing/asserts.ts"
-import ServeRouter from "../dist/index.js"
+import ServeRouter from "../src/index.ts"
 
 Deno.test(async function handler_return(t) {
     const app = ServeRouter()

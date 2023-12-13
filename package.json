@@ -1,7 +1,7 @@
 {
     "name": "serve-router",
     "author": "YieldRay",
-    "version": "0.6.1",
+    "version": "0.6.2",
     "type": "module",
     "main": "dist/index.js",
     "types": "dist/index.d.ts",
@@ -36,9 +36,9 @@
     "homepage": "https://github.com/YieldRay/serve-router#readme",
     "devDependencies": {
         "@pipedream/types": "^0.1.6",
-        "@types/node": "^20.8.8",
-        "typescript": "^5.2.2",
-        "undici": "^5.26.5",
+        "@types/node": "^20.10.4",
+        "typescript": "^5.3.3",
+        "undici": "^6.0.1",
         "urlpattern-polyfill": "^9.0.0"
     }
 }

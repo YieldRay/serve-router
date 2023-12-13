@@ -1,4 +1,4 @@
-import { match } from "./utils/match.js"
+import { match } from "./utils/match.ts"
 
 /**
  * This Error class allow you to distinct if error is thrown by serve-router
