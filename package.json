@@ -1,27 +1,34 @@
 {
     "name": "serve-router",
     "author": "YieldRay",
-    "version": "0.6.2",
+    "version": "0.7.0",
     "type": "module",
-    "main": "dist/index.js",
+    "exports": {
+        ".": {
+            "import": "./dist/index.mjs",
+            "require": "./dist/index.cjs"
+        },
+        "./node": {
+            "import": "./dist/node/index.mjs",
+            "require": "./dist/node/index.cjs"
+        },
+        "./pipedream": {
+            "import": "./dist/pipedream/index.mjs",
+            "require": "./dist/pipedream/index.cjs"
+        },
+        "./utils": {
+            "import": "./dist/utils/index.mjs",
+            "require": "./dist/utils/index.cjs"
+        }
+    },
+    "main": "dist/index.cjs",
     "types": "dist/index.d.ts",
     "files": [
         "src/",
         "dist/"
     ],
-    "exports": {
-        ".": {
-            "import": "./dist/index.js",
-            "require": "./dist/index.cjs"
-        },
-        "./node": "./dist/node/index.js",
-        "./pipedream": "./dist/pipedream/index.js",
-        "./utils": "./dist/utils/index.js",
-        "./utils/": "./dist/utils/"
-    },
     "scripts": {
-        "build": "rm -rf ./dist && tsc && npm run build:cjs",
-        "build:cjs": "esbuild src/require.ts --outfile=dist/index.cjs --format=cjs --platform=node --bundle --minify",
+        "build": "unbuild",
         "test": "deno test test/",
         "preinstall": "npx only-allow pnpm"
     },
@@ -38,6 +45,7 @@
         "@pipedream/types": "^0.1.6",
         "@types/node": "^20.10.4",
         "typescript": "^5.3.3",
+        "unbuild": "^2.0.0",
         "undici": "^6.0.1",
         "urlpattern-polyfill": "^9.0.0"
     }

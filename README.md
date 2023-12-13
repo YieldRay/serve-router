@@ -85,17 +85,19 @@ app.get("/", () => new Response("Hello, world!"))
 http.createServer(d2n(app.fetch)).listen(8080)
 ```
 
-This library has basic `require()` support (for node.js)
+This library support CommonJS environment.
 
 ```js
 require("urlpattern-polyfill")
-const { ServeRouter, serve, d2n } = require("serve-router")
+const { d2n, serve } = require("serve-router/node")
+const { ServeRouter } = require("serve-router")
+const http = require("http")
 const app = ServeRouter()
 app.get("/", () => new Response("Hello, world!"))
 
 serve({ handler: app.fetch, port: 8080 })
 // or
-http.createServer(d2n(app.fetch)).listen(8080)
+// http.createServer(d2n(app.fetch)).listen(8080)
 ```
 
 For `Cloudflare Workers` and `Bun`

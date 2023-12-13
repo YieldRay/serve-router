@@ -50,9 +50,7 @@ export interface ServeRouterOptions<Context extends TContext = {}> {
  * Deno.serve(app.fetch)
  * ```
  */
-export default function ServeRouter<Context extends TContext = {}>(
-    options?: ServeRouterOptions<Context>
-) {
+function ServeRouter<Context extends TContext = {}>(options?: ServeRouterOptions<Context>) {
     // prevent call by `new`
     if (new.target) throw new ServeRouterError("ServeRouter() is not a constructor")
 
@@ -237,3 +235,5 @@ export default function ServeRouter<Context extends TContext = {}>(
 
     return { ...createInstance(), export: serveHandler, fetch: serveHandler }
 }
+
+export { ServeRouter, ServeRouter as default }
