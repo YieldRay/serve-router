@@ -85,7 +85,7 @@ app.get("/", () => new Response("Hello, world!"))
 http.createServer(d2n(app.fetch)).listen(8080)
 ```
 
-This library support CommonJS environment.
+This library supports CommonJS environment.
 
 ```js
 require("urlpattern-polyfill")

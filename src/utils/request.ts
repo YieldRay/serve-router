@@ -1,3 +1,5 @@
+import { decodeBase64, encodeBase64, utf8Decoder, utf8Encoder } from "./base64"
+
 declare global {
     interface FormData {
         // this is not a standard method so typescript does not have it
@@ -11,7 +13,10 @@ declare global {
  */
 export async function parseRequestBody(request: Request, fallbackContentType?: string) {
     const contentType = request.headers.get("content-type") ?? fallbackContentType
-    if (!contentType) throw new Error(`unknown content-type: ${contentType}`)
+
+    if (!contentType) {
+        throw new Error(`unknown content-type: ${contentType}`)
+    }
     if (contentType.startsWith("application/json")) {
         return await request.json()
     }
@@ -25,7 +30,7 @@ export async function parseRequestBody(request: Request, fallbackContentType?: s
     }
 }
 
-function extractAllEntries<T extends keyof any, U>(it: Iterable<[T, U]>) {
+export function extractAllEntries<T extends keyof any, U>(it: Iterable<[T, U]>) {
     const record: Record<T, U | U[]> = {} as Record<any, any>
     for (const [k, v] of it) {
         const r: undefined | U[] | U = record[k]
@@ -38,4 +43,47 @@ function extractAllEntries<T extends keyof any, U>(it: Iterable<[T, U]>) {
         }
     }
     return record
+}
+
+const CREDENTIALS_REGEXP = /^ *(?:[Bb][Aa][Ss][Ii][Cc]) +([A-Za-z0-9._~+/-]+=*) *$/
+const USER_PASS_REGEXP = /^([^:]*):(.*)$/
+
+/**
+ * Parse authorization header, Basic encodeBase64(user + ":" + pass)
+ *
+ * @ref https://datatracker.ietf.org/doc/html/rfc7617
+ */
+export function parseBasicAuth(authoriztion: string) {
+    const match = CREDENTIALS_REGEXP.exec(authoriztion)
+    if (!match) {
+        return undefined
+    }
+    let userPass = undefined
+    try {
+        userPass = USER_PASS_REGEXP.exec(utf8Decoder.decode(decodeBase64(match[1])))
+    } catch {}
+    if (!userPass) {
+        return undefined
+    }
+    return { username: userPass[1], password: userPass[2] }
+}
+
+export function buildBasicAuth(user: string, pass: string) {
+    return `Basic ${encodeBase64(utf8Encoder.encode(user))}:${encodeBase64(
+        utf8Encoder.encode(pass)
+    )}`
+}
+
+const BEARER_REGEXP = /^Bearer +([A-Za-z0-9\-._~+/]+=*)$/
+
+/**
+ * @ref https://datatracker.ietf.org/doc/html/rfc6750
+ */
+export function parseBearerAuth(authoriztion: string) {
+    const match = BEARER_REGEXP.exec(authoriztion)
+    if (match) {
+        return match[1]
+    } else {
+        return undefined
+    }
 }
