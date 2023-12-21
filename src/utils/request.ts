@@ -52,6 +52,19 @@ const USER_PASS_REGEXP = /^([^:]*):(.*)$/
  * Parse authorization header, Basic encodeBase64(user + ":" + pass)
  *
  * @ref https://datatracker.ietf.org/doc/html/rfc7617
+ * @example
+ * serve((req) => {
+ *    const basic = parseBasicAuth(req.headers.get("authorization"))
+ *    if (!basic || !(basic.username === "admin" && basic.password === "pa$$w0rd")) {
+ *        return new Response(null, {
+ *            status: 401,
+ *            headers: {
+ *                "WWW-Authenticate": 'Basic realme=""',
+ *            },
+ *        })
+ *    }
+ *    return new Response("welcome to admin page")
+ *})
  */
 export function parseBasicAuth(authoriztion: string) {
     const match = CREDENTIALS_REGEXP.exec(authoriztion)

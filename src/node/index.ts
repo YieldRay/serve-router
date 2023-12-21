@@ -47,10 +47,9 @@ export interface ServeInit {
  */
 export function incoming2request(req: http.IncomingMessage): Request {
     const method = req.method ?? "GET"
-    let body = undefined
-    if (!["HEAD", "GET"].includes(method.toUpperCase())) {
-        body = Readable.toWeb(req) as globalThis.ReadableStream
-    }
+    const body = ["HEAD", "GET"].includes(method.toUpperCase())
+        ? undefined
+        : (Readable.toWeb(req) as globalThis.ReadableStream)
     const headers = new Headers()
     for (const [key, value] of Object.entries(req.headers)) {
         if (Array.isArray(value)) {
@@ -77,7 +76,7 @@ export function incoming2request(req: http.IncomingMessage): Request {
  */
 export function response4server(res: http.ServerResponse, resp: Response) {
     res.statusCode = resp.status
-    resp.headers.forEach(([key, value]) => {
+    resp.headers.forEach((value, key) => {
         if (res.hasHeader(key)) {
             res.setHeader(key, [res.getHeader(key)!, value].map(String).flat())
         } else {
