@@ -82,9 +82,8 @@ export function parseBasicAuth(authoriztion: string) {
 }
 
 export function buildBasicAuth(user: string, pass: string) {
-    return `Basic ${encodeBase64(utf8Encoder.encode(user))}:${encodeBase64(
-        utf8Encoder.encode(pass)
-    )}`
+    const s = `${user}:${pass}`
+    return `Basic ${encodeBase64(utf8Encoder.encode(s))}`
 }
 
 const BEARER_REGEXP = /^Bearer +([A-Za-z0-9\-._~+/]+=*)$/
