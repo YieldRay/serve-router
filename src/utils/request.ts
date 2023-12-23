@@ -59,7 +59,7 @@ const USER_PASS_REGEXP = /^([^:]*):(.*)$/
  *        return new Response(null, {
  *            status: 401,
  *            headers: {
- *                "WWW-Authenticate": 'Basic realme=""',
+ *                "WWW-Authenticate": `Basic realm=""`,
  *            },
  *        })
  *    }
