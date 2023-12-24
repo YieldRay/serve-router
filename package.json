@@ -46,7 +46,7 @@
         "@types/node": "^20.10.5",
         "typescript": "^5.3.3",
         "unbuild": "^2.0.0",
-        "undici": "^6.2.0",
+        "undici": "^6.2.1",
         "urlpattern-polyfill": "^9.0.0"
     }
 }

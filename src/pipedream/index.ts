@@ -1,6 +1,6 @@
 //@ts-ignore
 import fetch, { Request, Response, Headers } from "undici"
-import { Pipedream } from "@pipedream/types"
+import type { Pipedream } from "@pipedream/types"
 
 /**
  * Prepare:   
@@ -26,7 +26,6 @@ export default serve((req) => {
 });
 ```
 */
-
 export function createServe(defineComponent: <T>(options: object) => T) {
     return function serve(handler: (request: Request) => Response | Promise<Response>) {
         return defineComponent({

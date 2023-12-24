@@ -1,4 +1,4 @@
-import { decodeBase64, encodeBase64, utf8Decoder, utf8Encoder } from "./base64"
+import { decodeBase64, encodeBase64, utf8Decoder, utf8Encoder } from "./base64.ts"
 
 declare global {
     interface FormData {
