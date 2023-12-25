@@ -233,7 +233,10 @@ function ServeRouter<Context extends TContext = {}>(options?: ServeRouterOptions
         }
     }
 
-    return { ...createInstance(), export: serveHandler, fetch: serveHandler }
+    // export it so we can use it from other library
+    const $export: Readonly<Readonly<Record>[]> = records
+
+    return { ...createInstance(), export: $export, fetch: serveHandler }
 }
 
 export { ServeRouter, ServeRouter as default }

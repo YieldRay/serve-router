@@ -1,13 +1,5 @@
 import { decodeBase64, encodeBase64, utf8Decoder, utf8Encoder } from "./base64.ts"
 
-declare global {
-    interface FormData {
-        // this is not a standard method so typescript does not have it
-        // however it is widely supported in all the runtimes
-        entires(): Iterable<[string, string | Blob]>
-    }
-}
-
 /**
  * Parse the request body, by the content-type header
  */
@@ -26,7 +18,7 @@ export async function parseRequestBody(request: Request, fallbackContentType?: s
     }
     if (contentType.startsWith("multipart/form-data")) {
         const fd = await request.formData()
-        return extractAllEntries(fd.entires())
+        return extractAllEntries(fd.entries())
     }
 }
 

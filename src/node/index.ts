@@ -62,7 +62,7 @@ export function incoming2request(req: http.IncomingMessage): Request {
     const path = req.url ?? "/"
     const host: string = req.headers.host ?? (req.socket.address() as AddressInfo).address
 
-    // const protocal = (req.socket as { encrypted?: boolean }).encrypted ? "https" : "http";
+    // const protocol = (req.socket as { encrypted?: boolean }).encrypted ? "https" : "http";
     return new Request(new URL(path, `http://${host}`), {
         method,
         headers,

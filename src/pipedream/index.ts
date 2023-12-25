@@ -6,7 +6,7 @@ import type { Pipedream } from "@pipedream/types"
  * Prepare:   
  * Add a trigger, and select any SOURCES you would like,   
  * for example: _New HTTP / Webhook Requests_  
- * (then, in the _trigger_ pannel)  
+ * (then, in the _trigger_ panel)  
  * -----------------------------------------------------------
  * Event Data    = Raw Request  
  * HTTP Response = Return a custom response from your workflow
