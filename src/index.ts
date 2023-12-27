@@ -1,4 +1,5 @@
 import { match } from "./utils/match.ts"
+import type { Params } from "./utils/match.ts"
 
 /**
  * This Error class allow you to distinct if error is thrown by serve-router
@@ -10,15 +11,13 @@ export class ServeRouterError extends Error {
 type ServeRouterResponse = Response | void | [Response | void]
 
 type TContext = Exclude<object, "params">
-type TParams = Exclude<ReturnType<typeof match>, undefined>
 
-export interface ServeRouterHandler<
-    Params extends TParams = TParams,
-    Context extends TContext = {}
-> {
-    (request: Request, context: { params: Params } & Context, response: Response | null):
-        | ServeRouterResponse
-        | Promise<ServeRouterResponse>
+export interface ServeRouterHandler<Context extends TContext = {}, Path extends string = string> {
+    (
+        request: Request,
+        context: { params: Params<Path> } & Context,
+        response: Response | null,
+    ): ServeRouterResponse | Promise<ServeRouterResponse>
 }
 
 export interface ServeRouterOptions<Context extends TContext = {}> {
@@ -50,7 +49,9 @@ export interface ServeRouterOptions<Context extends TContext = {}> {
  * Deno.serve(app.fetch)
  * ```
  */
-function ServeRouter<Context extends TContext = {}>(options?: ServeRouterOptions<Context>) {
+function ServeRouter<GlobalContext extends TContext = {}>(
+    options?: ServeRouterOptions<GlobalContext>,
+) {
     // prevent call by `new`
     if (new.target) throw new ServeRouterError("ServeRouter() is not a constructor")
 
@@ -69,19 +70,6 @@ function ServeRouter<Context extends TContext = {}>(options?: ServeRouterOptions
     // store records added by instance methods
     const records: Record[] = []
 
-    // just a helper function for adding a record
-    function addRecord<Params extends TParams, Context extends TContext>(
-        method: string,
-        path: string,
-        ...handlers: ServeRouterHandler<Params, Context>[]
-    ) {
-        records.push({
-            method,
-            path,
-            handlers,
-        })
-    }
-
     async function serveHandler(request: Request) {
         // url for match
         const url = new URL(request.url)
@@ -93,7 +81,7 @@ function ServeRouter<Context extends TContext = {}>(options?: ServeRouterOptions
                     ? await options.context(request)
                     : options.context
                 : {}
-        ) as Context & { params: TParams }
+        ) as GlobalContext & { params: Params }
 
         if (typeof context !== "object")
             throw new TypeError("context should be an object or return an object")
@@ -128,7 +116,7 @@ function ServeRouter<Context extends TContext = {}>(options?: ServeRouterOptions
                             if (response) {
                                 if (options?.throwOnDuplicatedResponse) {
                                     throw new ServeRouterError(
-                                        "duplicated Response returned by handler"
+                                        "duplicated Response returned by handler",
                                     )
                                 } else {
                                     continue
@@ -171,62 +159,61 @@ function ServeRouter<Context extends TContext = {}>(options?: ServeRouterOptions
     }
 
     function createInstance(prefix = "") {
-        const array = <T>(item: T | T[]) => (Array.isArray(item) ? item : [item])
         return {
-            get: function <Params extends TParams = {}, Context extends TContext = {}>(
-                path: string | string[],
-                ...handlers: ServeRouterHandler<Params, Context>[]
-            ): typeof this {
-                array(path).forEach((p) => addRecord("GET", prefix + p, ...handlers))
+            get: function <
+                Context extends GlobalContext = GlobalContext,
+                Path extends string = string,
+            >(path: Path, ...handlers: ServeRouterHandler<Context, Path>[]): typeof this {
+                records.push({ method: "GET", path: prefix + path, handlers })
                 return this
             },
-            head: function <Params extends TParams = {}, Context extends TContext = {}>(
-                path: string | string[],
-                ...handlers: ServeRouterHandler<Params, Context>[]
-            ): typeof this {
-                array(path).forEach((p) => addRecord("HEAD", prefix + p, ...handlers))
+            head: function <
+                Context extends GlobalContext = GlobalContext,
+                Path extends string = string,
+            >(path: Path, ...handlers: ServeRouterHandler<Context, Path>[]): typeof this {
+                records.push({ method: "HEAD", path: prefix + path, handlers })
                 return this
             },
-            post: function <Params extends TParams = {}, Context extends TContext = {}>(
-                path: string | string[],
-                ...handlers: ServeRouterHandler<Params, Context>[]
-            ): typeof this {
-                array(path).forEach((p) => addRecord("POST", prefix + p, ...handlers))
+            post: function <
+                Context extends GlobalContext = GlobalContext,
+                Path extends string = string,
+            >(path: Path, ...handlers: ServeRouterHandler<Context, Path>[]): typeof this {
+                records.push({ method: "POST", path: prefix + path, handlers })
                 return this
             },
-            put: function <Params extends TParams = {}, Context extends TContext = {}>(
-                path: string | string[],
-                ...handlers: ServeRouterHandler<Params, Context>[]
-            ): typeof this {
-                array(path).forEach((p) => addRecord("PUT", prefix + p, ...handlers))
+            put: function <
+                Context extends GlobalContext = GlobalContext,
+                Path extends string = string,
+            >(path: Path, ...handlers: ServeRouterHandler<Context, Path>[]): typeof this {
+                records.push({ method: "PUT", path: prefix + path, handlers })
                 return this
             },
-            delete: function <Params extends TParams = {}, Context extends TContext = {}>(
-                path: string | string[],
-                ...handlers: ServeRouterHandler<Params, Context>[]
-            ): typeof this {
-                array(path).forEach((p) => addRecord("DELETE", prefix + p, ...handlers))
+            delete: function <
+                Context extends GlobalContext = GlobalContext,
+                Path extends string = string,
+            >(path: Path, ...handlers: ServeRouterHandler<Context, Path>[]): typeof this {
+                records.push({ method: "DELETE", path: prefix + path, handlers })
                 return this
             },
-            options: function <Params extends TParams = {}, Context extends TContext = {}>(
-                path: string | string[],
-                ...handlers: ServeRouterHandler<Params, Context>[]
-            ): typeof this {
-                array(path).forEach((p) => addRecord("OPTIONS", prefix + p, ...handlers))
+            options: function <
+                Context extends GlobalContext = GlobalContext,
+                Path extends string = string,
+            >(path: Path, ...handlers: ServeRouterHandler<Context, Path>[]): typeof this {
+                records.push({ method: "OPTIONS", path: prefix + path, handlers })
                 return this
             },
-            patch: function <Params extends TParams = {}, Context extends TContext = {}>(
-                path: string | string[],
-                ...handlers: ServeRouterHandler<Params, Context>[]
-            ): typeof this {
-                array(path).forEach((p) => addRecord("PATCH", prefix + p, ...handlers))
+            patch: function <
+                Context extends GlobalContext = GlobalContext,
+                Path extends string = string,
+            >(path: Path, ...handlers: ServeRouterHandler<Context, Path>[]): typeof this {
+                records.push({ method: "PATCH", path: prefix + path, handlers })
                 return this
             },
-            all: function <Params extends TParams = {}, Context extends TContext = {}>(
-                path: string | string[],
-                ...handlers: ServeRouterHandler<Params, Context>[]
-            ): typeof this {
-                array(path).forEach((p) => addRecord("*", prefix + p, ...handlers))
+            all: function <
+                Context extends GlobalContext = GlobalContext,
+                Path extends string = string,
+            >(path: Path, ...handlers: ServeRouterHandler<Context, Path>[]): typeof this {
+                records.push({ method: "*", path: prefix + path, handlers })
                 return this
             },
             route: (path: string) => createInstance(path),

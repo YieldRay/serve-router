@@ -61,16 +61,16 @@ export const CORSResponse = createResponse({
 export function transformResponse(response: Response, init: ResponseInit): Response
 export function transformResponse(
     response: Response,
-    mapper: (init: ResponseInit) => ResponseInit,
+    mapper: (init: ResponseInit) => ResponseInit
 ): Response
 export function transformResponse(
     response: Response,
-    mapper: ((init: ResponseInit) => ResponseInit) | ResponseInit,
+    mapper: ((init: ResponseInit) => ResponseInit) | ResponseInit
 ) {
     return new Response(
         response.body,
         typeof mapper === "function"
             ? mapper({ status: response.status, headers: response.headers })
-            : mapper,
+            : mapper
     )
 }

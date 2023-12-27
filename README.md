@@ -38,8 +38,12 @@ app.get("/", () => new Response("Hello, world!"))
 
 app.get("/headers", (req: Request) => Response.json(Object.fromEntries(req.headers.entries())))
 
-app.get<{ name: string }>("/user/:name", (_req, { params }) => {
+app.get("/user/:name", (_req, { params }) => {
+    // (Auto inferred types)
+    // params: { name: string }
     return new Response(`Hello, ${params.name}`)
+    // (To disable params infer)
+    // app.get("/user/:name" as string, ...)
 })
 
 app.post("/post", async (req) => {
@@ -123,7 +127,7 @@ import { serveDir } from "https://deno.land/std/http/file_server.ts"
 const app = ServeRouter()
 // OR: const app = ServeRouter<{ beginTime: number }>()
 
-app.all<{}, { beginTime: number }>("/(.*)", (req: Request, ctx) => {
+app.all<{ beginTime: number }>("/(.*)", (req: Request, ctx) => {
     ctx.beginTime = Date.now()
     console.log("[prehandle]  ", req.method, req.url)
 })
@@ -135,7 +139,7 @@ app.all("/static/(.*)", (req) =>
     })
 )
 
-app.all<{}, { beginTime: number }>("/(.*)", (_req: Request, ctx, res: Response | null) => {
+app.all<{ beginTime: number }>("/(.*)", (_req: Request, ctx, res: Response | null) => {
     const endTime = Date.now()
     const { beginTime } = ctx
     console.log(
