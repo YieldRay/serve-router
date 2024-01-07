@@ -1,5 +1,4 @@
-// just for type
-import type {} from "urlpattern-polyfill"
+/// <reference types="urlpattern-polyfill" />
 
 /**
  * @example
