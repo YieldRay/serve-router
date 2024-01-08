@@ -22,9 +22,11 @@ export async function parseRequestBody(request: Request, fallbackContentType?: s
     }
 }
 
-export function extractAllEntries<T extends keyof any, U>(it: Iterable<[T, U]>) {
+export function extractAllEntries<T extends keyof any, U>(
+    entries: Iterable<[T, U]>
+): Record<T, U | U[]> {
     const record: Record<T, U | U[]> = {} as Record<any, any>
-    for (const [k, v] of it) {
+    for (const [k, v] of entries) {
         const r: undefined | U[] | U = record[k]
         if (!r) {
             record[k] = v
@@ -35,6 +37,47 @@ export function extractAllEntries<T extends keyof any, U>(it: Iterable<[T, U]>) 
         }
     }
     return record
+}
+
+/**
+ * Intend to normalize `URLSearchParams.entries()` or `FormData.entries()`
+ * when they are nested, which `extractAllEntries()` function does not do
+ *
+ * Note that when conflict happens, the order of `entries` matters, 
+ * following one overwrite previous ones
+ *
+ * Convert `{ "source[privacy]": "public", "source[language]": "en" }` to
+ * `{ "source": { "privacy": "public", "language": "en" } }`
+ *
+ * @example https://docs.joinmastodon.org/client/intro/#hash
+ */
+export function extractNestedEntries<T>(entries: Iterable<[string, T]>) {
+    type ExtractedObject = { [key: string]: ExtractedObject | T }
+    const result: ExtractedObject = {}
+    for (const [k, v] of entries) {
+        if (!k.startsWith("[") && k.includes("[") && k.endsWith("]")) {
+            // nested
+            const firstSquareBracketIndex = k.indexOf("[")
+            const subKeys = [
+                k.slice(0, firstSquareBracketIndex),
+                ...k.slice(firstSquareBracketIndex + 1, -1).split("]["),
+            ]
+            let prev = result
+            let i: number
+            for (i = 0; i < subKeys.length - 1; i++) {
+                const subKey = subKeys[i]
+                prev =
+                    typeof prev[subKey] === "object"
+                        ? (prev[subKey] as ExtractedObject)
+                        : (prev[subKey] = {})
+            }
+            prev[subKeys[i]] = v
+        } else {
+            // not nested
+            result[k] = v
+        }
+    }
+    return result
 }
 
 const CREDENTIALS_REGEXP = /^ *(?:[Bb][Aa][Ss][Ii][Cc]) +([A-Za-z0-9._~+/-]+=*) *$/
