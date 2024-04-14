@@ -1,6 +1,8 @@
 import { match } from "./utils/match.ts"
 import type { Params } from "./utils/match.ts"
 
+const METHOD_ALL = "*"
+
 /**
  * This Error class allow you to distinct if error is thrown by serve-router
  */
@@ -13,11 +15,9 @@ type ServeRouterResponse = Response | void | [Response | void]
 type TContext = Exclude<object, "params">
 
 export interface ServeRouterHandler<Context extends TContext = {}, Path extends string = string> {
-    (
-        request: Request,
-        context: { params: Params<Path> } & Context,
-        response: Response | null,
-    ): ServeRouterResponse | Promise<ServeRouterResponse>
+    (request: Request, context: { params: Params<Path> } & Context, response: Response | null):
+        | ServeRouterResponse
+        | Promise<ServeRouterResponse>
 }
 
 export interface ServeRouterOptions<Context extends TContext = {}> {
@@ -50,7 +50,7 @@ export interface ServeRouterOptions<Context extends TContext = {}> {
  * ```
  */
 function ServeRouter<GlobalContext extends TContext = {}>(
-    options?: ServeRouterOptions<GlobalContext>,
+    options?: ServeRouterOptions<GlobalContext>
 ) {
     // prevent call by `new`
     if (new.target) throw new ServeRouterError("ServeRouter() is not a constructor")
@@ -92,7 +92,7 @@ function ServeRouter<GlobalContext extends TContext = {}>(
         for (const record of records) {
             // check request method
             // special record method: *
-            if (record.method !== "*" && record.method !== request.method) continue
+            if (record.method !== METHOD_ALL && record.method !== request.method) continue
 
             // check if request pathname is matched
             const { path, handlers } = record
@@ -116,7 +116,7 @@ function ServeRouter<GlobalContext extends TContext = {}>(
                             if (response) {
                                 if (options?.throwOnDuplicatedResponse) {
                                     throw new ServeRouterError(
-                                        "duplicated Response returned by handler",
+                                        "duplicated Response returned by handler"
                                     )
                                 } else {
                                     continue
@@ -162,58 +162,58 @@ function ServeRouter<GlobalContext extends TContext = {}>(
         return {
             get: function <
                 Context extends GlobalContext = GlobalContext,
-                Path extends string = string,
+                Path extends string = string
             >(path: Path, ...handlers: ServeRouterHandler<Context, Path>[]): typeof this {
                 records.push({ method: "GET", path: prefix + path, handlers })
                 return this
             },
             head: function <
                 Context extends GlobalContext = GlobalContext,
-                Path extends string = string,
+                Path extends string = string
             >(path: Path, ...handlers: ServeRouterHandler<Context, Path>[]): typeof this {
                 records.push({ method: "HEAD", path: prefix + path, handlers })
                 return this
             },
             post: function <
                 Context extends GlobalContext = GlobalContext,
-                Path extends string = string,
+                Path extends string = string
             >(path: Path, ...handlers: ServeRouterHandler<Context, Path>[]): typeof this {
                 records.push({ method: "POST", path: prefix + path, handlers })
                 return this
             },
             put: function <
                 Context extends GlobalContext = GlobalContext,
-                Path extends string = string,
+                Path extends string = string
             >(path: Path, ...handlers: ServeRouterHandler<Context, Path>[]): typeof this {
                 records.push({ method: "PUT", path: prefix + path, handlers })
                 return this
             },
             delete: function <
                 Context extends GlobalContext = GlobalContext,
-                Path extends string = string,
+                Path extends string = string
             >(path: Path, ...handlers: ServeRouterHandler<Context, Path>[]): typeof this {
                 records.push({ method: "DELETE", path: prefix + path, handlers })
                 return this
             },
             options: function <
                 Context extends GlobalContext = GlobalContext,
-                Path extends string = string,
+                Path extends string = string
             >(path: Path, ...handlers: ServeRouterHandler<Context, Path>[]): typeof this {
                 records.push({ method: "OPTIONS", path: prefix + path, handlers })
                 return this
             },
             patch: function <
                 Context extends GlobalContext = GlobalContext,
-                Path extends string = string,
+                Path extends string = string
             >(path: Path, ...handlers: ServeRouterHandler<Context, Path>[]): typeof this {
                 records.push({ method: "PATCH", path: prefix + path, handlers })
                 return this
             },
             all: function <
                 Context extends GlobalContext = GlobalContext,
-                Path extends string = string,
+                Path extends string = string
             >(path: Path, ...handlers: ServeRouterHandler<Context, Path>[]): typeof this {
-                records.push({ method: "*", path: prefix + path, handlers })
+                records.push({ method: METHOD_ALL, path: prefix + path, handlers })
                 return this
             },
             route: (path: string) => createInstance(path),

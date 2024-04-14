@@ -2,6 +2,7 @@ import http from "node:http"
 import { Readable } from "node:stream"
 import type { ReadableStream } from "node:stream/web"
 import type { AddressInfo } from "node:net"
+import { writeFromReadableStream } from "./utils.ts"
 
 // fix type issue
 declare global {
@@ -49,7 +50,7 @@ export function incoming2request(req: http.IncomingMessage): Request {
     const method = req.method ?? "GET"
     const body = ["HEAD", "GET"].includes(method.toUpperCase())
         ? undefined
-        : (Readable.toWeb(req) as globalThis.ReadableStream)
+        : (Readable.toWeb(req) as globalThis.ReadableStream<Uint8Array>)
     const headers = new Headers()
     for (const [key, value] of Object.entries(req.headers)) {
         if (Array.isArray(value)) {
@@ -61,9 +62,9 @@ export function incoming2request(req: http.IncomingMessage): Request {
 
     const path = req.url ?? "/"
     const host: string = req.headers.host ?? (req.socket.address() as AddressInfo).address
+    const protocol = (req.socket as { encrypted?: boolean }).encrypted ? "https" : "http"
 
-    // const protocol = (req.socket as { encrypted?: boolean }).encrypted ? "https" : "http";
-    return new Request(new URL(path, `http://${host}`), {
+    return new Request(new URL(path, `${protocol}://${host}`), {
         method,
         headers,
         body,
@@ -84,7 +85,8 @@ export function response4server(res: http.ServerResponse, resp: Response) {
         }
     })
     if (resp.body) {
-        Readable.fromWeb(resp.body as ReadableStream).pipe(res)
+        writeFromReadableStream(resp.body, res)
+        // Readable.fromWeb(resp.body as ReadableStream<any>).pipe(res)
     } else {
         res.end()
     }

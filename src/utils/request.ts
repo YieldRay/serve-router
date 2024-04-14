@@ -43,7 +43,7 @@ export function extractAllEntries<T extends keyof any, U>(
  * Intend to normalize `URLSearchParams.entries()` or `FormData.entries()`
  * when they are nested, which `extractAllEntries()` function does not do
  *
- * Note that when conflict happens, the order of `entries` matters, 
+ * Note that when conflict happens, the order of `entries` matters,
  * following one overwrite previous ones
  *
  * Convert `{ "source[privacy]": "public", "source[language]": "en" }` to
@@ -133,4 +133,8 @@ export function parseBearerAuth(authoriztion: string) {
     } else {
         return undefined
     }
+}
+
+export function buildBearerAuth(bearer: string) {
+    return `Bearer ${bearer}`
 }
