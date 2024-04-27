@@ -1,6 +1,6 @@
 import http from "node:http"
 import { Readable } from "node:stream"
-import type { ReadableStream } from "node:stream/web"
+// import type { ReadableStream } from "node:stream/web"
 import type { AddressInfo } from "node:net"
 import { writeFromReadableStream } from "./utils.ts"
 

@@ -51,7 +51,9 @@ export function extractAllEntries<T extends keyof any, U>(
  *
  * @example https://docs.joinmastodon.org/client/intro/#hash
  */
-export function extractNestedEntries<T>(entries: Iterable<[string, T]>) {
+export function extractNestedEntries<T>(entries: Iterable<[string, T]>): {
+    [key: string]: T | object
+} {
     type ExtractedObject = { [key: string]: ExtractedObject | T }
     const result: ExtractedObject = {}
     for (const [k, v] of entries) {

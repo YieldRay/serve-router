@@ -43,5 +43,16 @@
     "bugs": {
         "url": "https://github.com/YieldRay/serve-router/issues"
     },
-    "homepage": "https://github.com/YieldRay/serve-router#readme"
+    "homepage": "https://github.com/YieldRay/serve-router#readme",
+    "publishConfig": {
+        "registry": "https://registry.npmjs.org"
+    },
+    "description": "tiny router library that routes for your web standard http server",
+    "keywords": [
+        "http",
+        "router",
+        "workers",
+        "worker",
+        "serverless"
+    ]
 }
