@@ -41,10 +41,10 @@ export function extractAllEntries<T extends keyof any, U>(
 
 /**
  * Intend to normalize `URLSearchParams.entries()` or `FormData.entries()`
- * when they are nested, which `extractAllEntries()` function does not do
+ * when they are nested, which `extractAllEntries()` function does not do.
  *
  * Note that when conflict happens, the order of `entries` matters,
- * following one overwrite previous ones
+ * following one overwrite previous ones.
  *
  * Convert `{ "source[privacy]": "public", "source[language]": "en" }` to
  * `{ "source": { "privacy": "public", "language": "en" } }`
@@ -84,7 +84,7 @@ const CREDENTIALS_REGEXP = /^ *(?:[Bb][Aa][Ss][Ii][Cc]) +([A-Za-z0-9._~+/-]+=*) 
 const USER_PASS_REGEXP = /^([^:]*):(.*)$/
 
 /**
- * Parse authorization header, Basic encodeBase64(user + ":" + pass)
+ * Parse authorization header, `Basic encodeBase64(user + ":" + pass)`.
  *
  * @ref https://datatracker.ietf.org/doc/html/rfc7617
  * @example
@@ -117,8 +117,7 @@ export function parseBasicAuth(authoriztion: string) {
 }
 
 export function buildBasicAuth(user: string, pass: string) {
-    const s = `${user}:${pass}`
-    return `Basic ${encodeBase64(utf8Encoder.encode(s))}`
+    return `Basic ${encodeBase64(utf8Encoder.encode(`${user}:${pass}`))}`
 }
 
 const BEARER_REGEXP = /^Bearer +([A-Za-z0-9\-._~+/]+=*)$/

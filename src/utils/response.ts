@@ -1,5 +1,5 @@
 /**
- * overwrite dest Headers with src Headers
+ * Overwrite dest Headers with src Headers
  */
 export function mergeHeaders(dest?: HeadersInit, src?: HeadersInit): Headers {
     if (!dest) return new Headers(src)
@@ -9,7 +9,7 @@ export function mergeHeaders(dest?: HeadersInit, src?: HeadersInit): Headers {
 }
 
 /**
- * overwrite dest ResponseInit with src ResponseInit
+ * Overwrite dest ResponseInit with src ResponseInit
  */
 export function mergeResponseInit(dest?: ResponseInit, src?: ResponseInit): ResponseInit {
     return {
@@ -19,7 +19,7 @@ export function mergeResponseInit(dest?: ResponseInit, src?: ResponseInit): Resp
 }
 
 /**
- * create a Response class with pre-defined ResponseInit
+ * Create a Response class with pre-defined ResponseInit
  */
 export function createResponse(preInit?: ResponseInit) {
     return class CreatedResponse extends Response {
@@ -56,7 +56,7 @@ export const CORSResponse = createResponse({
 })
 
 /**
- * based on the input response, returns a new response with given headers & status
+ * Based on the input response, returns a new response with given headers & status
  */
 export function transformResponse(response: Response, init: ResponseInit): Response
 export function transformResponse(

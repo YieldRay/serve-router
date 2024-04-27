@@ -12,12 +12,15 @@ export class ServeRouterError extends Error {
 
 type ServeRouterResponse = Response | void | [Response | void]
 
+type MaybePromise<T> = T | Promise<T>
 type TContext = Exclude<object, "params">
 
 export interface ServeRouterHandler<Context extends TContext = {}, Path extends string = string> {
-    (request: Request, context: { params: Params<Path> } & Context, response: Response | null):
-        | ServeRouterResponse
-        | Promise<ServeRouterResponse>
+    (
+        request: Request,
+        context: { params: Params<Path> } & Context,
+        response: Response | null
+    ): MaybePromise<ServeRouterResponse>
 }
 
 export interface ServeRouterOptions<Context extends TContext = {}> {
@@ -38,7 +41,7 @@ export interface ServeRouterOptions<Context extends TContext = {}> {
     /**
      * @default {}
      */
-    context?: Context | ((request: Request) => Context | Promise<Context>)
+    context?: Context | ((request: Request) => MaybePromise<Context>)
 }
 
 /**

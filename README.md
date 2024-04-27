@@ -1,6 +1,6 @@
 # serve-router
 
-A small express like library that routes for your http server.
+A small router library that routes for your [web standard http server](https://workers.js.org/).
 
 Build for deno's [`Deno.serve()`](https://deno.land/api?s=Deno.serve) api, which also compatible with some serverless platform.  
 e.g. [`Bun.serve()`](https://bun.sh/docs/api/http#bun-serve) [`Cloudflare Workers`](https://workers.dev/) [`val.town Web API`](https://www.val.town/v/yieldray.serve_router)  
