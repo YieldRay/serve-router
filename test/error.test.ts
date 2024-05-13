@@ -26,11 +26,6 @@ test(async function on_error(t) {
 
     await t.test(async function on_error_2() {
         const res = await app.fetch(new Request("http://example.net/error/two"))
-        assert.equal(res.status, 500)
-        assert.ok(
-            (await res.text()).startsWith(
-                "ServeRouterError: handlers can only return Response or void"
-            )
-        )
+        assert.equal(res.status, 404)
     })
 })

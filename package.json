@@ -1,6 +1,6 @@
 {
     "name": "serve-router",
-    "version": "0.8.2",
+    "version": "1.0.0",
     "type": "module",
     "sideEffect": false,
     "main": "dist/index.cjs",
@@ -29,7 +29,7 @@
         "preinstall": "npx only-allow pnpm"
     },
     "devDependencies": {
-        "@types/node": "^20.12.7",
+        "@types/node": "^20.12.11",
         "typescript": "^5.4.5",
         "unbuild": "^2.0.0",
         "urlpattern-polyfill": "^9.0.0"

@@ -14,12 +14,12 @@ test(async function handler_return(t) {
         assert.equal(await res.text(), "one")
     })
 
+    app.get("/two", (_, { next }) => next())
     app.get("/two", () => new Response("two"))
-    app.get("/two", () => [new Response("__two__")])
 
     await t.test(async function handler_return_2() {
         const res = await app.fetch(new Request("http://example.net/two"))
         assert.equal(res.status, 200)
-        assert.equal(await res.text(), "__two__")
+        assert.equal(await res.text(), "two")
     })
 })

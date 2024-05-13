@@ -1,43 +1,43 @@
-import { match } from "./utils/match.ts"
-import type { Params } from "./utils/match.ts"
+import { match, type Params } from "./utils/match.ts"
 
-const METHOD_ALL = "*"
+export const METHOD_ALL = Symbol("METHOD_ALL")
+export const METHOD_USE = Symbol("METHOD_USE")
 
 /**
- * This Error class allow you to distinct if error is thrown by serve-router
+ * This Error class allow you to distinct if error is thrown by serve-router.
  */
 export class ServeRouterError extends Error {
     override name = "ServeRouterError"
 }
 
-type ServeRouterResponse = Response | void | [Response | void]
-
 type MaybePromise<T> = T | Promise<T>
-type TContext = Exclude<object, "params">
+type TContext = Exclude<object, "params" | "next">
+type BuiltInContext<Path extends string = string> = {
+    params: Params<Path>
+    next: () => Promise<Response>
+}
 
-export interface ServeRouterHandler<Context extends TContext = {}, Path extends string = string> {
-    (
-        request: Request,
-        context: { params: Params<Path> } & Context,
-        response: Response | null
-    ): MaybePromise<ServeRouterResponse>
+export type ServeRouterHandler<Context extends TContext = {}, Path extends string = string> = {
+    (request: Request, context: BuiltInContext<Path> & Context): MaybePromise<Response>
 }
 
 export interface ServeRouterOptions<Context extends TContext = {}> {
     /**
-     * Callback function when a registered handler throws, this callback capture the error variable
-     * and parameters the handler consumes.
-     * This callback function can return any Response and it will be sent to the client.
+     * Callback function when a registered handler throws, this callback capture the error variable,
+     * the handler itself, and parameters the handler consumes.
+     *
+     * This callback function may returnf Response and it will be sent to the client.
+     * Please note that onError can be async, but make sure it DOES NOT throws.
+     *
+     * @param error the variable thrown by the handler.
+     * @param handler the throwing handler that cause the error, this should ONLY for debug purpose.
+     * @param args the arguments passed to the handler.
      */
-    onError?(e: unknown, detail: Parameters<ServeRouterHandler>): ReturnType<ServeRouterHandler>
-    /**
-     * By default serve-router only send the first Response returned by the handler function
-     * to the client, continue to execute the rest handler but IGNORE it's Response
-     *  (except it returns an array that tell serve-router to force use the it's first value).
-     * Enable throwOnDuplicatedResponse and serve-router will throw if you return duplicated
-     * Response in the same request
-     */
-    throwOnDuplicatedResponse?: boolean
+    onError?(
+        error: unknown,
+        handler: ServeRouterHandler,
+        args: Parameters<ServeRouterHandler>
+    ): ReturnType<ServeRouterHandler> | MaybePromise<void>
     /**
      * @default {}
      */
@@ -56,27 +56,41 @@ function ServeRouter<GlobalContext extends TContext = {}>(
     options?: ServeRouterOptions<GlobalContext>
 ) {
     // prevent call by `new`
-    if (new.target) throw new ServeRouterError("ServeRouter() is not a constructor")
+    if (new.target)
+        throw new ServeRouterError("ServeRouter() is not a constructor, `new` is not required.")
 
-    const onErrorDefault = (e: unknown, detail: Parameters<ServeRouterHandler>) => {
-        console.error(e, detail)
-        return new Response("Internal Server Error", { status: 500 })
+    const onError: NonNullable<ServeRouterOptions["onError"]> =
+        options?.onError ||
+        ((e, handler, args) =>
+            console.error(
+                e,
+                [
+                    "\r\n",
+                    "-".repeat(50),
+                    "Caused by handler:",
+                    handler,
+                    "-".repeat(50),
+                    "Arguments:",
+                ].join("\r\n"),
+                args,
+                "\r\n",
+                "-".repeat(50),
+                "\r\n"
+            ))
+
+    interface Routes {
+        [method: string | symbol]:
+            | Array<{
+                  path: string
+                  handlers: ServeRouterHandler<any, any>[]
+              }>
+            | undefined
     }
-    const onError = options?.onError || onErrorDefault
 
-    type Record = {
-        method: string
-        path: string
-        handlers: ServeRouterHandler<any, any>[]
-    }
-
-    // store records added by instance methods
-    const records: Record[] = []
+    // store routes added by instance methods
+    const routes: Routes = {}
 
     async function serveHandler(request: Request) {
-        // url for match
-        const url = new URL(request.url)
-
         // the context object, will pass to handler as the second parameter
         const context = (
             options && "context" in options
@@ -84,147 +98,128 @@ function ServeRouter<GlobalContext extends TContext = {}>(
                     ? await options.context(request)
                     : options.context
                 : {}
-        ) as GlobalContext & { params: Params }
+        ) as GlobalContext & BuiltInContext
 
         if (typeof context !== "object")
             throw new TypeError("context should be an object or return an object")
 
-        // can only response once
-        let response: Response | null = null
+        const pendingRoutes = routes[METHOD_USE] || []
+        if (request.method in routes) pendingRoutes.push(...routes[request.method]!)
+        if (METHOD_ALL in routes) pendingRoutes.push(...routes[METHOD_ALL]!)
 
-        for (const record of records) {
-            // check request method
-            // special record method: *
-            if (record.method !== METHOD_ALL && record.method !== request.method) continue
+        let i = -1
+        const next: () => Promise<Response> = async () => {
+            i++ // current route index
+            if (i >= pendingRoutes.length) {
+                return new Response(`Cannot ${request.method} ${new URL(request.url).pathname}`, {
+                    status: 404,
+                })
+            }
 
-            // check if request pathname is matched
-            const { path, handlers } = record
+            const { path } = pendingRoutes[i]
             const matches = match(path, request.url)
-            if (!matches) continue
-
+            if (!matches) {
+                // try next route
+                return next()
+            }
             // assign matches to context object
             Reflect.set(context, "params", matches)
+
+            const { handlers } = pendingRoutes[i]
             for (const handler of handlers) {
                 try {
-                    // handler can be sync or async
-                    const handlerResp = await handler(request, context, response)
-                    const shouldOverride = Array.isArray(handlerResp)
-                    const resp = shouldOverride ? handlerResp[0] : handlerResp
-
-                    // 1
-                    if (resp instanceof Response) {
-                        if (shouldOverride) {
-                            response = resp
-                        } else {
-                            if (response) {
-                                if (options?.throwOnDuplicatedResponse) {
-                                    throw new ServeRouterError(
-                                        "duplicated Response returned by handler"
-                                    )
-                                } else {
-                                    continue
-                                }
-                            } else {
-                                response = resp
-                            }
-                        }
-                    }
-                    // 2
-                    else if (resp === undefined) {
-                        if (shouldOverride) {
-                            response = null
-                        } else {
-                            continue
-                        }
-                    }
-                    // 3
-                    else {
-                        throw new ServeRouterError("handlers can only return Response or void")
+                    const response = await handler(request, context)
+                    if (response instanceof Response) {
+                        return response
                     }
                 } catch (e) {
-                    // the handler() may throw error
-                    // when one handler throws, we stop any next handler and returns error response
-                    const resp = await onError(e, [request, context, response])
-                    // if not return a Response, stop to find and return 500 to client
-                    if (resp instanceof Response) return resp
-                    else return new Response("Internal Server Error", { status: 500 })
+                    const response = await onError(e, handler, [request, context])
+                    return response instanceof Response
+                        ? response
+                        : new Response("Internal Server Error", { status: 500 })
                 }
             }
+
+            // no return in current route
+            return next()
         }
 
-        // the last returned response will be sent
-        return (
-            response ||
-            new Response(`Cannot ${request.method} ${url.pathname}`, {
-                status: 404,
-            })
-        )
+        Reflect.set(context, "next", next)
+        return next()
     }
 
     function createInstance(prefix = "") {
-        return {
+        const instance = {
             get: function <
                 Context extends GlobalContext = GlobalContext,
                 Path extends string = string
-            >(path: Path, ...handlers: ServeRouterHandler<Context, Path>[]): typeof this {
-                records.push({ method: "GET", path: prefix + path, handlers })
+            >(path: Path, ...handlers: ServeRouterHandler<Context, Path>[]) {
+                ;(routes["GET"] ||= []).push({ path: prefix + path, handlers })
                 return this
             },
             head: function <
                 Context extends GlobalContext = GlobalContext,
                 Path extends string = string
-            >(path: Path, ...handlers: ServeRouterHandler<Context, Path>[]): typeof this {
-                records.push({ method: "HEAD", path: prefix + path, handlers })
+            >(path: Path, ...handlers: ServeRouterHandler<Context, Path>[]) {
+                ;(routes["HEAD"] ||= []).push({ path: prefix + path, handlers })
                 return this
             },
             post: function <
                 Context extends GlobalContext = GlobalContext,
                 Path extends string = string
-            >(path: Path, ...handlers: ServeRouterHandler<Context, Path>[]): typeof this {
-                records.push({ method: "POST", path: prefix + path, handlers })
+            >(path: Path, ...handlers: ServeRouterHandler<Context, Path>[]) {
+                ;(routes["POST"] ||= []).push({ path: prefix + path, handlers })
                 return this
             },
             put: function <
                 Context extends GlobalContext = GlobalContext,
                 Path extends string = string
-            >(path: Path, ...handlers: ServeRouterHandler<Context, Path>[]): typeof this {
-                records.push({ method: "PUT", path: prefix + path, handlers })
+            >(path: Path, ...handlers: ServeRouterHandler<Context, Path>[]) {
+                ;(routes["PUT"] ||= []).push({ path: prefix + path, handlers })
                 return this
             },
             delete: function <
                 Context extends GlobalContext = GlobalContext,
                 Path extends string = string
-            >(path: Path, ...handlers: ServeRouterHandler<Context, Path>[]): typeof this {
-                records.push({ method: "DELETE", path: prefix + path, handlers })
+            >(path: Path, ...handlers: ServeRouterHandler<Context, Path>[]) {
+                ;(routes["DELETE"] ||= []).push({ path: prefix + path, handlers })
                 return this
             },
             options: function <
                 Context extends GlobalContext = GlobalContext,
                 Path extends string = string
-            >(path: Path, ...handlers: ServeRouterHandler<Context, Path>[]): typeof this {
-                records.push({ method: "OPTIONS", path: prefix + path, handlers })
+            >(path: Path, ...handlers: ServeRouterHandler<Context, Path>[]) {
+                ;(routes["OPTIONS"] ||= []).push({ path: prefix + path, handlers })
                 return this
             },
             patch: function <
                 Context extends GlobalContext = GlobalContext,
                 Path extends string = string
-            >(path: Path, ...handlers: ServeRouterHandler<Context, Path>[]): typeof this {
-                records.push({ method: "PATCH", path: prefix + path, handlers })
+            >(path: Path, ...handlers: ServeRouterHandler<Context, Path>[]) {
+                ;(routes["PATCH"] ||= []).push({ path: prefix + path, handlers })
+                return this
+            },
+            use: function <
+                Context extends GlobalContext = GlobalContext,
+                Path extends string = string
+            >(path: Path, ...handlers: ServeRouterHandler<Context, Path>[]) {
+                ;(routes[METHOD_USE] ||= []).push({ path: prefix + path, handlers })
                 return this
             },
             all: function <
                 Context extends GlobalContext = GlobalContext,
                 Path extends string = string
-            >(path: Path, ...handlers: ServeRouterHandler<Context, Path>[]): typeof this {
-                records.push({ method: METHOD_ALL, path: prefix + path, handlers })
+            >(path: Path, ...handlers: ServeRouterHandler<Context, Path>[]) {
+                ;(routes[METHOD_ALL] ||= []).push({ path: prefix + path, handlers })
                 return this
             },
             route: (path: string) => createInstance(path),
         }
+        return instance
     }
 
     // export it so we can use it from other library
-    const $export: Readonly<Readonly<Record>[]> = records
+    const $export: Readonly<Routes> = routes
 
     return { ...createInstance(), export: $export, fetch: serveHandler }
 }
