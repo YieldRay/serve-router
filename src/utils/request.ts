@@ -3,11 +3,16 @@ import { decodeBase64, encodeBase64, utf8Decoder, utf8Encoder } from "./base64.t
 /**
  * Parse the request body, by the content-type header
  */
-export async function parseRequestBody(request: Request, fallbackContentType?: string) {
+export async function parseRequestBody(
+    request: Request,
+    fallbackContentType?:
+        | "application/json"
+        | "application/x-www-form-urlencoded"
+        | "multipart/form-data"
+) {
     const contentType = request.headers.get("content-type") ?? fallbackContentType
-
     if (!contentType) {
-        throw new Error(`unknown content-type: ${contentType}`)
+        throw new Error(`no content-type is provided`)
     }
     if (contentType.startsWith("application/json")) {
         return await request.json()
@@ -20,6 +25,7 @@ export async function parseRequestBody(request: Request, fallbackContentType?: s
         const fd = await request.formData()
         return extractAllEntries(fd.entries())
     }
+    throw new Error(`unknown content-type: ${contentType}`)
 }
 
 export function extractAllEntries<T extends keyof any, U>(

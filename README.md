@@ -1,5 +1,12 @@
 # serve-router
 
+[![npm version][npm-version-src]][npm-version-href]
+[![bundle][bundle-src]][bundle-href]
+[![paka.dev][paka-src]][paka-href]
+[![TSDocs][tsdocs-src]][tsdocs-href]
+[![JSDocs][jsdocs-src]][jsdocs-href]
+[![License][license-src]][license-href]
+
 A tiny router library that routes for your [web standard HTTP server](https://workers.js.org/).
 
 Build for Deno's [`Deno.serve()`](https://deno.land/api?s=Deno.serve) api, which is also compatible with some serverless platforms.   
@@ -9,7 +16,7 @@ Node.js is also supported with built-in polyfill.
 
 **features**:
 
--   Works in any runtime - Node.js, Bun, Deno, Cloudflare Workers
+-   Works in any runtime - Node.js, Bun, Deno, Cloudflare Workers, even the web browser!
 -   Easy to use with a familiar API
 -   Integrate with the existing ecosystem
 -   Fully typed
@@ -182,6 +189,20 @@ app.all<{ beginTime: number }>("/(.*)", async (_req, ctx) => {
 Deno.serve(app.fetch)
 ```
 
+Yes! You can run it in the browser!
+
+```html
+<script type="module">
+    import ServeRouter from "https://esm.sh/serve-router"
+
+    const app = ServeRouter()
+    app.get("/:name", (req, ctx) => new Response(`Hello, ${ctx.params.name}!`))
+
+    const response = await app.fetch(new Request("https://any.domain/alice"))
+    console.log(await response.text()) // => "Hello, alice!"
+</script>
+```
+
 # Build
 
 ```sh
@@ -190,3 +211,18 @@ cd serve-router
 pnpm install
 pnpm run build
 ```
+
+<!-- Badges -->
+
+[npm-version-src]: https://img.shields.io/npm/v/serve-router?style=flat&colorA=080f12&colorB=1fa669
+[npm-version-href]: https://npmjs.com/package/serve-router
+[bundle-src]: https://img.shields.io/bundlephobia/minzip/serve-router?style=flat&colorA=080f12&colorB=1fa669&label=minzip
+[bundle-href]: https://bundlephobia.com/result?p=serve-router
+[license-src]: https://img.shields.io/github/license/YieldRay/serve-router.svg?style=flat&colorA=080f12&colorB=1fa669
+[license-href]: https://github.com/YieldRay/serve-router/blob/main/LICENSE
+[paka-src]: https://img.shields.io/badge/paka-reference-080f12?style=flat&colorA=080f12&colorB=1fa669
+[paka-href]: https://paka.dev/npm/serve-router
+[tsdocs-src]: https://img.shields.io/badge/tsdocs-reference-080f12?style=flat&colorA=080f12&colorB=1fa669
+[tsdocs-href]: https://tsdocs.dev/docs/serve-router
+[jsdocs-src]: https://img.shields.io/badge/jsdocs-reference-080f12?style=flat&colorA=080f12&colorB=1fa669
+[jsdocs-href]: https://www.jsdocs.io/package/serve-router
