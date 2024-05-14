@@ -17,6 +17,15 @@ type BuiltInContext<Path extends string = string> = {
     next: () => Promise<Response>
 }
 
+interface Routes {
+    [method: string | symbol]:
+        | Array<{
+              path: string
+              handlers: ServeRouterHandler<any, any>[]
+          }>
+        | undefined
+}
+
 export type ServeRouterHandler<Context extends TContext = {}, Path extends string = string> = {
     (request: Request, context: BuiltInContext<Path> & Context): MaybePromise<Response>
 }
@@ -77,15 +86,6 @@ function ServeRouter<GlobalContext extends TContext = {}>(
                 "-".repeat(50),
                 "\r\n"
             ))
-
-    interface Routes {
-        [method: string | symbol]:
-            | Array<{
-                  path: string
-                  handlers: ServeRouterHandler<any, any>[]
-              }>
-            | undefined
-    }
 
     // store routes added by instance methods
     const routes: Routes = {}
