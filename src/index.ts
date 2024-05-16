@@ -2,6 +2,7 @@ import { match, type Params } from "./utils/match.ts"
 
 export const METHOD_ALL = Symbol("METHOD_ALL")
 export const METHOD_USE = Symbol("METHOD_USE")
+export const METHOD = Symbol("METHOD")
 
 /**
  * This Error class allow you to distinct if error is thrown by serve-router.
@@ -148,71 +149,67 @@ function ServeRouter<GlobalContext extends TContext = {}>(
         return next()
     }
 
-    function createInstance(prefix = "") {
+    const createInstance = (prefix = "") => {
+        const add = <Context extends GlobalContext = GlobalContext, Path extends string = string>(
+            method: string | symbol,
+            path: Path,
+            ...handlers: ServeRouterHandler<Context, Path>[]
+        ) => {
+            ;(routes[method] ||= []).push({ path: prefix + path, handlers })
+            return instance
+        }
         const instance = {
-            get: function <
-                Context extends GlobalContext = GlobalContext,
-                Path extends string = string
-            >(path: Path, ...handlers: ServeRouterHandler<Context, Path>[]) {
-                ;(routes["GET"] ||= []).push({ path: prefix + path, handlers })
-                return this
-            },
-            head: function <
-                Context extends GlobalContext = GlobalContext,
-                Path extends string = string
-            >(path: Path, ...handlers: ServeRouterHandler<Context, Path>[]) {
-                ;(routes["HEAD"] ||= []).push({ path: prefix + path, handlers })
-                return this
-            },
-            post: function <
-                Context extends GlobalContext = GlobalContext,
-                Path extends string = string
-            >(path: Path, ...handlers: ServeRouterHandler<Context, Path>[]) {
-                ;(routes["POST"] ||= []).push({ path: prefix + path, handlers })
-                return this
-            },
-            put: function <
-                Context extends GlobalContext = GlobalContext,
-                Path extends string = string
-            >(path: Path, ...handlers: ServeRouterHandler<Context, Path>[]) {
-                ;(routes["PUT"] ||= []).push({ path: prefix + path, handlers })
-                return this
-            },
-            delete: function <
-                Context extends GlobalContext = GlobalContext,
-                Path extends string = string
-            >(path: Path, ...handlers: ServeRouterHandler<Context, Path>[]) {
-                ;(routes["DELETE"] ||= []).push({ path: prefix + path, handlers })
-                return this
-            },
-            options: function <
-                Context extends GlobalContext = GlobalContext,
-                Path extends string = string
-            >(path: Path, ...handlers: ServeRouterHandler<Context, Path>[]) {
-                ;(routes["OPTIONS"] ||= []).push({ path: prefix + path, handlers })
-                return this
-            },
-            patch: function <
-                Context extends GlobalContext = GlobalContext,
-                Path extends string = string
-            >(path: Path, ...handlers: ServeRouterHandler<Context, Path>[]) {
-                ;(routes["PATCH"] ||= []).push({ path: prefix + path, handlers })
-                return this
-            },
-            use: function <
-                Context extends GlobalContext = GlobalContext,
-                Path extends string = string
-            >(path: Path, ...handlers: ServeRouterHandler<Context, Path>[]) {
-                ;(routes[METHOD_USE] ||= []).push({ path: prefix + path, handlers })
-                return this
-            },
-            all: function <
-                Context extends GlobalContext = GlobalContext,
-                Path extends string = string
-            >(path: Path, ...handlers: ServeRouterHandler<Context, Path>[]) {
-                ;(routes[METHOD_ALL] ||= []).push({ path: prefix + path, handlers })
-                return this
-            },
+            [METHOD]: <Context extends GlobalContext = GlobalContext, Path extends string = string>(
+                method: string,
+                path: Path,
+                ...handlers: ServeRouterHandler<Context, Path>[]
+            ) => add(method, path, ...handlers),
+
+            get: <Context extends GlobalContext = GlobalContext, Path extends string = string>(
+                path: Path,
+                ...handlers: ServeRouterHandler<Context, Path>[]
+            ) => add("GET", path, ...handlers),
+
+            head: <Context extends GlobalContext = GlobalContext, Path extends string = string>(
+                path: Path,
+                ...handlers: ServeRouterHandler<Context, Path>[]
+            ) => add("HEAD", path, ...handlers),
+
+            post: <Context extends GlobalContext = GlobalContext, Path extends string = string>(
+                path: Path,
+                ...handlers: ServeRouterHandler<Context, Path>[]
+            ) => add("POST", path, ...handlers),
+
+            put: <Context extends GlobalContext = GlobalContext, Path extends string = string>(
+                path: Path,
+                ...handlers: ServeRouterHandler<Context, Path>[]
+            ) => add("PUT", path, ...handlers),
+
+            delete: <Context extends GlobalContext = GlobalContext, Path extends string = string>(
+                path: Path,
+                ...handlers: ServeRouterHandler<Context, Path>[]
+            ) => add("DELETE", path, ...handlers),
+
+            options: <Context extends GlobalContext = GlobalContext, Path extends string = string>(
+                path: Path,
+                ...handlers: ServeRouterHandler<Context, Path>[]
+            ) => add("OPTIONS", path, ...handlers),
+
+            patch: <Context extends GlobalContext = GlobalContext, Path extends string = string>(
+                path: Path,
+                ...handlers: ServeRouterHandler<Context, Path>[]
+            ) => add("PATCH", path, ...handlers),
+
+            use: <Context extends GlobalContext = GlobalContext, Path extends string = string>(
+                path: Path,
+                ...handlers: ServeRouterHandler<Context, Path>[]
+            ) => add(METHOD_USE, path, ...handlers),
+
+            all: <Context extends GlobalContext = GlobalContext, Path extends string = string>(
+                path: Path,
+                ...handlers: ServeRouterHandler<Context, Path>[]
+            ) => add(METHOD_ALL, path, ...handlers),
+
             route: (path: string) => createInstance(path),
         }
         return instance

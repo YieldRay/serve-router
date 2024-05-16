@@ -14,9 +14,13 @@ test(async function on_error(t) {
         .get("/one", () => {
             throw new Error("/error/one")
         })
-        .get("/two", () => {
-            return "/error/two"
-        })
+        .get(
+            "/two",
+            //@ts-expect-error
+            () => {
+                return "/error/two"
+            }
+        )
 
     await t.test(async function on_error_1() {
         const res = await app.fetch(new Request("http://example.net/error/one"))
