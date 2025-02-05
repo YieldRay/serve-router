@@ -53,7 +53,7 @@ export const CORSResponse = createResponse({
 })
 
 /**
- * Based on the input response, returns a new response with given headers & status
+ * Based on the input response, returns a new response with given headers and status
  */
 export function transformResponse(response: Response, init: ResponseInit): Response {
     return new Response(response.body, mergeResponseInit(response, init))

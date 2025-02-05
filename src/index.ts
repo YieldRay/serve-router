@@ -36,7 +36,7 @@ export interface ServeRouterOptions<Context extends TContext = {}> {
      * Callback function when a registered handler throws, this callback capture the error variable,
      * the handler itself, and parameters the handler consumes.
      *
-     * This callback function may returnf Response and it will be sent to the client.
+     * This callback function may return Response and it will be sent to the client.
      * Please note that onError can be async, but make sure it DOES NOT throws.
      *
      * @param error the variable thrown by the handler.

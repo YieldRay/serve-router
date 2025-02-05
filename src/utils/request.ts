@@ -109,8 +109,8 @@ const USER_PASS_REGEXP = /^([^:]*):(.*)$/
  *    return new Response("welcome to admin page")
  *})
  */
-export function parseBasicAuth(authoriztion: string) {
-    const match = CREDENTIALS_REGEXP.exec(authoriztion)
+export function parseBasicAuth(authorization: string) {
+    const match = CREDENTIALS_REGEXP.exec(authorization)
     if (!match) {
         return undefined
     }
@@ -133,8 +133,8 @@ const BEARER_REGEXP = /^Bearer +([A-Za-z0-9\-._~+/]+=*)$/
 /**
  * @ref https://datatracker.ietf.org/doc/html/rfc6750
  */
-export function parseBearerAuth(authoriztion: string) {
-    const match = BEARER_REGEXP.exec(authoriztion)
+export function parseBearerAuth(authorization: string) {
+    const match = BEARER_REGEXP.exec(authorization)
     if (match) {
         return match[1]
     } else {

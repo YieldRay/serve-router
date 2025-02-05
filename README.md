@@ -9,6 +9,8 @@
 
 A tiny router library that routes for your [web standard HTTP server](https://workers.js.org/).
 
+> Why this is useful? See _[The modern way to write JavaScript servers](https://marvinh.dev/blog/modern-way-to-write-javascript-servers/)_
+
 Build for Deno's [`Deno.serve()`](https://deno.land/api?s=Deno.serve) api, which is also compatible with some serverless platforms.   
 e.g. [`Bun.serve()`](https://bun.sh/docs/api/http#bun-serve) [`Cloudflare Workers`](https://workers.dev/) [`val.town Web API`](https://www.val.town/v/yieldray.serve_router)    
 see: <https://deno.com/manual/runtime/http_server_apis>    
