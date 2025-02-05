@@ -25,14 +25,13 @@
     },
     "scripts": {
         "build": "unbuild",
-        "test": "tsx --test test/*",
-        "preinstall": "npx only-allow pnpm"
+        "test": "tsx --test test/*"
     },
     "devDependencies": {
-        "@types/node": "^20.17.17",
+        "@types/node": "^22.13.1",
         "typescript": "^5.7.3",
-        "unbuild": "^2.0.0",
-        "urlpattern-polyfill": "^9.0.0"
+        "unbuild": "^3.3.1",
+        "urlpattern-polyfill": "^10.0.0"
     },
     "license": "MIT",
     "author": "YieldRay",
@@ -54,5 +53,6 @@
         "workers",
         "worker",
         "serverless"
-    ]
+    ],
+    "packageManager": "pnpm@9.15.4"
 }

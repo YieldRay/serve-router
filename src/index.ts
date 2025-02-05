@@ -46,7 +46,7 @@ export interface ServeRouterOptions<Context extends TContext = {}> {
     onError?(
         error: unknown,
         handler: ServeRouterHandler,
-        args: Parameters<ServeRouterHandler>
+        args: Parameters<ServeRouterHandler>,
     ): ReturnType<ServeRouterHandler> | MaybePromise<void>
     /**
      * @default {}
@@ -63,7 +63,7 @@ export interface ServeRouterOptions<Context extends TContext = {}> {
  * ```
  */
 function ServeRouter<GlobalContext extends TContext = {}>(
-    options?: ServeRouterOptions<GlobalContext>
+    options?: ServeRouterOptions<GlobalContext>,
 ) {
     // prevent call by `new`
     if (new.target)
@@ -85,7 +85,7 @@ function ServeRouter<GlobalContext extends TContext = {}>(
                 args,
                 "\r\n",
                 "-".repeat(50),
-                "\r\n"
+                "\r\n",
             ))
 
     // store routes added by instance methods

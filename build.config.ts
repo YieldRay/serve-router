@@ -5,9 +5,9 @@ export default defineBuildConfig([
         name: "ServeRouter",
         externals: ["undici"],
         rollup: {
-            // esbuild: {
-            //     minify: true,
-            // },
+            esbuild: {
+                minify: false,
+            },
             output: {
                 exports: "named",
             },

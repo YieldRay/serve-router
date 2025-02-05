@@ -8,7 +8,7 @@ export async function parseRequestBody(
     fallbackContentType?:
         | "application/json"
         | "application/x-www-form-urlencoded"
-        | "multipart/form-data"
+        | "multipart/form-data",
 ) {
     const contentType = request.headers.get("content-type") ?? fallbackContentType
     if (!contentType) {
@@ -29,7 +29,7 @@ export async function parseRequestBody(
 }
 
 export function extractAllEntries<T extends keyof any, U>(
-    entries: Iterable<[T, U]>
+    entries: Iterable<[T, U]>,
 ): Record<T, U | U[]> {
     const record: Record<T, U | U[]> = {} as Record<any, any>
     for (const [k, v] of entries) {

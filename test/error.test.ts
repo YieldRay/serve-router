@@ -19,7 +19,7 @@ test(async function on_error(t) {
             //@ts-expect-error
             () => {
                 return "/error/two"
-            }
+            },
         )
 
     await t.test(async function on_error_1() {

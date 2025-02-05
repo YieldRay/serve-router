@@ -18,11 +18,11 @@ Node.js is also supported with built-in polyfill.
 
 **features**:
 
--   Works in any runtime - Node.js, Bun, Deno, Cloudflare Workers, even the web browser!
--   Easy to use with a familiar API
--   Integrate with the existing ecosystem
--   Fully typed
--   Zero dependency
+- Works in any runtime - Node.js, Bun, Deno, Cloudflare Workers, even the web browser!
+- Easy to use with a familiar API
+- Integrate with the existing ecosystem
+- Fully typed
+- Zero dependency
 
 > [!NOTE]  
 > For those who are building large web application, [Hono](https://hono.dev/) may be preferred.
@@ -54,7 +54,7 @@ const app = ServeRouter()
 app.all("/", () => new Response("Hello, world!"))
 
 app.get("/headers", (request: Request) =>
-    Response.json(Object.fromEntries(request.headers.entries()))
+    Response.json(Object.fromEntries(request.headers.entries())),
 )
 
 app.get("/user/:name", (_req, { params }) => {
@@ -161,7 +161,7 @@ app.all("/static/(.*)", (req) =>
     serveDir(req, {
         urlRoot: "static",
         fsRoot: "public",
-    })
+    }),
 )
 
 app.get("/", async (req) => {

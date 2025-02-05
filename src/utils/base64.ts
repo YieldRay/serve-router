@@ -1,7 +1,7 @@
 export const utf8Encoder = new TextEncoder()
 export const utf8Decoder = new TextDecoder()
 
-export function encodeBase64(buf: ArrayBufferLike): string {
+export function encodeBase64(buf: Uint8Array): string {
     let binary = ""
     const bytes = new Uint8Array(buf)
     for (let i = 0; i < bytes.length; i++) {
