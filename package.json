@@ -25,13 +25,15 @@
     },
     "scripts": {
         "build": "unbuild",
-        "test": "tsx --test test/*"
+        "test": "node --experimental-transform-types --test test/*"
     },
     "devDependencies": {
-        "@types/node": "^22.13.1",
-        "typescript": "^5.7.3",
-        "unbuild": "^3.3.1",
-        "urlpattern-polyfill": "^10.0.0"
+        "@types/node": "^22.15.30",
+        "typescript": "^5.8.3",
+        "unbuild": "^3.5.0"
+    },
+    "optionalDependencies": {
+        "urlpattern-polyfill": "^10.1.0"
     },
     "license": "MIT",
     "author": "YieldRay",
@@ -54,5 +56,5 @@
         "worker",
         "serverless"
     ],
-    "packageManager": "pnpm@9.15.4"
+    "packageManager": "pnpm@10.12.1"
 }

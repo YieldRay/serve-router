@@ -43,8 +43,8 @@ For Node.js < 18, this means polyfill is required.
 import ServeRouter from "https://esm.sh/serve-router@latest"
 const { serve } = Deno // Deno >= 1.15 support URLPattern()
 
-// use Node.js >= 18 or Bun
-import "urlpattern-polyfill" // Node.js and Bun do not support URLPattern() currently
+// use Node.js < 24 or Bun
+import "urlpattern-polyfill" // Node.js < 24 and Bun do not support URLPattern() currently
 import ServeRouter from "serve-router"
 import { serve } from "serve-router/node" // polyfill for Deno.serve(), not required for bun
 

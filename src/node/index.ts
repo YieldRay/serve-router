@@ -2,6 +2,7 @@ import http from "node:http"
 import { Readable } from "node:stream"
 // import type { ReadableStream } from "node:stream/web"
 import type { AddressInfo } from "node:net"
+// import { addAbortListener } from "node:events"
 import { writeFromReadableStream } from "./utils.ts"
 
 // fix type issue
@@ -179,9 +180,10 @@ export function serve(
             )({ hostname: "localhost", port })
         )
 
-    serveOptions.signal?.addEventListener("abort", () => {
-        server.close()
-    })
+    // if (serveOptions.signal) {
+    //     addAbortListener(serveOptions.signal, () => server.close())
+    // }
+    serveOptions.signal?.addEventListener("abort", () => server.close())
 
     return server
 }
