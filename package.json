@@ -1,6 +1,6 @@
 {
     "name": "serve-router",
-    "version": "1.1.1",
+    "version": "1.2.0",
     "type": "module",
     "sideEffect": false,
     "main": "dist/index.cjs",
@@ -28,9 +28,9 @@
         "test": "node --experimental-transform-types --test test/*"
     },
     "devDependencies": {
-        "@types/node": "^22.15.30",
-        "typescript": "^5.8.3",
-        "unbuild": "^3.5.0"
+        "@types/node": "^22.17.1",
+        "typescript": "^5.9.2",
+        "unbuild": "^3.6.0"
     },
     "optionalDependencies": {
         "urlpattern-polyfill": "^10.1.0"
@@ -56,5 +56,5 @@
         "worker",
         "serverless"
     ],
-    "packageManager": "pnpm@10.12.1"
+    "packageManager": "pnpm@10.14.0"
 }

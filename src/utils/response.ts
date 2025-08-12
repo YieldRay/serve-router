@@ -38,21 +38,6 @@ export function createResponse(preInit?: ResponseInit) {
 }
 
 /**
- * Response class with pre-defined access-control-* headers
- */
-export const CORSResponse = createResponse({
-    headers: {
-        "Access-Control-Allow-Origin": "*",
-        "Access-Control-Allow-Method": "*",
-        "Access-Control-Allow-Headers": "*",
-        "Access-Control-Allow-Credentials": "true",
-        "Access-Control-Expose-Headers": "*",
-        "Access-Control-Max-Age": "7200",
-        "Timing-Allow-Origin": "*",
-    },
-})
-
-/**
  * Based on the input response, returns a new response with given headers and status
  */
 export function transformResponse(response: Response, init: ResponseInit): Response {

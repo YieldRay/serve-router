@@ -8,11 +8,13 @@ export async function parseRequestBody(
     fallbackContentType?:
         | "application/json"
         | "application/x-www-form-urlencoded"
-        | "multipart/form-data",
+        | "multipart/form-data"
 ) {
     const contentType = request.headers.get("content-type") ?? fallbackContentType
     if (!contentType) {
-        throw new Error(`no content-type is provided`)
+        throw new Error(
+            `No content-type provided in request headers and no fallbackContentType specified. Unable to parse request body.`
+        )
     }
     if (contentType.startsWith("application/json")) {
         return await request.json()
@@ -25,11 +27,13 @@ export async function parseRequestBody(
         const fd = await request.formData()
         return extractAllEntries(fd.entries())
     }
-    throw new Error(`unknown content-type: ${contentType}`)
+    throw new Error(
+        `Unsupported or unknown content-type: "${contentType}". Unable to parse request body.`
+    )
 }
 
 export function extractAllEntries<T extends keyof any, U>(
-    entries: Iterable<[T, U]>,
+    entries: Iterable<[T, U]>
 ): Record<T, U | U[]> {
     const record: Record<T, U | U[]> = {} as Record<any, any>
     for (const [k, v] of entries) {

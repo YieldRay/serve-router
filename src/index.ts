@@ -1,4 +1,5 @@
 import { match, type Params } from "./utils/match.ts"
+import type { Awaitable } from "./utils/types.ts"
 
 export const METHOD_ALL = Symbol("METHOD_ALL")
 export const METHOD_USE = Symbol("METHOD_USE")
@@ -11,15 +12,15 @@ export class ServeRouterError extends Error {
     override name = "ServeRouterError"
 }
 
-type MaybePromise<T> = T | Promise<T>
 type TContext = Exclude<object, "params" | "next">
 type BuiltInContext<Path extends string = string> = {
     params: Params<Path>
     next: () => Promise<Response>
 }
+type Method = string | symbol
 
 interface Routes {
-    [method: string | symbol]:
+    [method: Method]:
         | Array<{
               path: string
               handlers: ServeRouterHandler<any, any>[]
@@ -28,7 +29,7 @@ interface Routes {
 }
 
 export type ServeRouterHandler<Context extends TContext = {}, Path extends string = string> = {
-    (request: Request, context: BuiltInContext<Path> & Context): MaybePromise<Response>
+    (request: Request, context: BuiltInContext<Path> & Context): Awaitable<Response>
 }
 
 export interface ServeRouterOptions<Context extends TContext = {}> {
@@ -46,12 +47,12 @@ export interface ServeRouterOptions<Context extends TContext = {}> {
     onError?(
         error: unknown,
         handler: ServeRouterHandler,
-        args: Parameters<ServeRouterHandler>,
-    ): ReturnType<ServeRouterHandler> | MaybePromise<void>
+        args: Parameters<ServeRouterHandler>
+    ): ReturnType<ServeRouterHandler> | Awaitable<void>
     /**
      * @default {}
      */
-    context?: Context | ((request: Request) => MaybePromise<Context>)
+    context?: Context | ((request: Request) => Awaitable<Context>)
 }
 
 /**
@@ -63,11 +64,13 @@ export interface ServeRouterOptions<Context extends TContext = {}> {
  * ```
  */
 function ServeRouter<GlobalContext extends TContext = {}>(
-    options?: ServeRouterOptions<GlobalContext>,
+    options?: ServeRouterOptions<GlobalContext>
 ) {
     // prevent call by `new`
     if (new.target)
-        throw new ServeRouterError("ServeRouter() is not a constructor, `new` is not required.")
+        throw new ServeRouterError(
+            "ServeRouter() should be called as a function, not as a constructor. Please remove the 'new' keyword."
+        )
 
     const onError: NonNullable<ServeRouterOptions["onError"]> =
         options?.onError ||
@@ -85,7 +88,7 @@ function ServeRouter<GlobalContext extends TContext = {}>(
                 args,
                 "\r\n",
                 "-".repeat(50),
-                "\r\n",
+                "\r\n"
             ))
 
     // store routes added by instance methods
@@ -102,7 +105,9 @@ function ServeRouter<GlobalContext extends TContext = {}>(
         ) as GlobalContext & BuiltInContext
 
         if (typeof context !== "object")
-            throw new TypeError("context should be an object or return an object")
+            throw new TypeError(
+                "Invalid context: expected an object or a function returning an object. Please check the 'context' option in ServeRouter."
+            )
 
         const pendingRoutes = routes[METHOD_USE] || []
         if (request.method in routes) pendingRoutes.push(...routes[request.method]!)
@@ -151,7 +156,7 @@ function ServeRouter<GlobalContext extends TContext = {}>(
 
     const createInstance = (prefix = "") => {
         const add = <Context extends GlobalContext = GlobalContext, Path extends string = string>(
-            method: string | symbol,
+            method: Method,
             path: Path,
             ...handlers: ServeRouterHandler<Context, Path>[]
         ) => {
