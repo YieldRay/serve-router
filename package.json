@@ -25,7 +25,8 @@
     },
     "scripts": {
         "build": "unbuild",
-        "test": "node --experimental-transform-types --test test/*"
+        "test": "node --experimental-transform-types --test test/*",
+        "cov": "node --experimental-transform-types --experimental-test-coverage --test test/*"
     },
     "devDependencies": {
         "@types/node": "^22.17.1",

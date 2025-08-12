@@ -9,8 +9,31 @@ export function match<T extends string>(pathname: T, url: string) {
     return pattern.exec(url)?.pathname.groups as Params<T> | undefined
 }
 
-export type Params<T extends string = string> = T extends `${string}:${infer U}`
-    ? U extends `${infer R}/${infer S}`
-        ? { [Group in R]: string } & Params<S>
-        : { [Group in U]: string }
-    : { [Group in string]?: string }
+// Extract params from a pathname pattern supporting modifiers ?, *, + and regex parts like :id(\d+)
+// Examples:
+// "/user/:id" -> { id: string }
+// "/optional/:val?" -> { val?: string }
+// "/files/:path*" -> { path?: string }
+// "/list/:item+" -> { item: string }
+// "/num/:id(\\d+)" -> { id: string }
+export type Params<T extends string = string> = string extends T
+    ? { [key: string]: string | undefined }
+    : T extends `${string}:${infer After}`
+    ? After extends `${infer Raw}/${infer Rest}`
+        ? ParamFromToken<Raw> & Params<Rest>
+        : ParamFromToken<After>
+    : {}
+
+type StripRegex<Token extends string> = Token extends `${infer Name}(${string})${infer Mod}`
+    ? `${Name}${Mod}`
+    : Token
+
+type ParamFromToken<Token extends string> = ParamRecord<StripRegex<Token>>
+
+type ParamRecord<Token extends string> = Token extends `${infer Name}?`
+    ? { [K in Name]?: string }
+    : Token extends `${infer Name}*`
+    ? { [K in Name]?: string }
+    : Token extends `${infer Name}+`
+    ? { [K in Name]: string }
+    : { [K in Token]: string }

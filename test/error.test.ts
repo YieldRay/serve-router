@@ -12,15 +12,24 @@ test(async function on_error(t) {
 
     app.route("/error")
         .get("/one", () => {
-            throw new Error("/error/one")
+                throw new Error("/error/one")
         })
         .get(
             "/two",
             //@ts-expect-error
             () => {
-                return "/error/two"
+                    return "/error/two"
             },
         )
+            .get("/three", () => {
+                // No error thrown, should be 200
+                return new Response("/error/three", { status: 200 })
+            })
+            .get("/four", () => {
+                // Throw a string, should be caught as error
+                // @ts-ignore
+                throw "/error/four"
+            })
 
     await t.test(async function on_error_1() {
         const res = await app.fetch(new Request("http://example.net/error/one"))
@@ -32,4 +41,16 @@ test(async function on_error(t) {
         const res = await app.fetch(new Request("http://example.net/error/two"))
         assert.equal(res.status, 404)
     })
+    
+        await t.test(async function on_error_3() {
+            const res = await app.fetch(new Request("http://example.net/error/three"))
+            assert.equal(res.status, 200)
+            assert.equal(await res.text(), "/error/three")
+        })
+    
+        await t.test(async function on_error_4() {
+            const res = await app.fetch(new Request("http://example.net/error/four"))
+            assert.equal(res.status, 500)
+            assert.ok((await res.text()).includes("/error/four"))
+        })
 })
