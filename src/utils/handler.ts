@@ -1,4 +1,4 @@
-import { transformResponse } from "./response"
+import { transformResponse } from "./response.ts"
 import type { Awaitable } from "./types.ts"
 
 export type WebHandler = (request: Request, ...extra: unknown[]) => Awaitable<Response>
